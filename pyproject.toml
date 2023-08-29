@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "starch2"
+version = "0.1.0"
+description = "Create worlds using procedures from Architect of Worlds."
+authors = ["ringbolt60 <90988457+ringbolt60@users.noreply.github.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[project]
+dependencies = [
+    "black",
+    "pytest",
+    "flake8",
+    "ipython",
+    "mypy",
+    "pylint",
+    "yapf"
+]
