@@ -153,40 +153,7 @@ def main():
     rotation_period, lock = calc_rotation_period(world)
     world = world._replace(rotational_period=rotation_period)
     world = world._replace(lock=lock)
-
-    match world.world_type:
-        case WorldType.LONE:
-            print(
-                f"{world.name}\n"
-                f"{world.world_type.value} Age: {world.age:.3f} GYr\n"
-                f"Mass: {world.planet_mass:.3f} M♁ Density: {world.density:.3f} K♁ Radius: {world.radius:.0f} km\n"
-                f"Star Mass: {world.star_mass:.3f} M☉ Distance: {world.star_distance:.3f} AU\n"
-                f"---\n"
-                f"Orbital Period = {world.orbital_period:.1f} hours\n"
-                f"Rotation Period = {world.rotational_period:.1f} hours {world.lock.value}"
-            )
-        case WorldType.ORBITED:
-            print(
-                f"{world.name}\n"
-                f"{world.world_type.value} Age: {world.age:.3f} GYr\n"
-                f"Mass: {world.planet_mass:.3f} M♁ Density: {world.density:.3f} K♁ Radius: {world.radius:.0f} km\n"
-                f"Star Mass: {world.star_mass:.3f} M☉ Distance: {world.star_distance:.3f} AU\n"
-                f"Satellite Mass: {world.satellite_mass:.3f} M♁ Distance: {world.primary_distance:.0f} km\n"
-                f"---\n"
-                f"Orbital Period = {world.orbital_period:.1f} hours\n"
-                f"Rotation Period = {world.rotational_period:.1f} hours {world.lock.value}"
-            )
-        case WorldType.SATELLITE:
-            print(
-                f"{world.name}\n"
-                f"{world.world_type.value} Age: {world.age:.3f} GYr\n"
-                f"Mass: {world.satellite_mass:.3f} M♁ Density: {world.density:.3f} K♁ Radius: {world.radius:.0f} km\n"
-                f"Star Mass: {world.star_mass:.3f} M☉ Distance: {world.star_distance:.3f} AU\n"
-                f"Primary Mass: {world.planet_mass:.3f} M♁ Distance: {world.primary_distance:.0f} km\n"
-                f"---\n"
-                f"Orbital Period = {world.orbital_period:.1f} hours\n"
-                f"Rotation Period = {world.rotational_period:.1f} hours {world.lock.value}"
-            )
+    print(world.describe())
 
 
 # --------------------------------------------------
@@ -210,7 +177,7 @@ class Resonance(Enum):
 # --------------------------------------------------
 class World(NamedTuple):
     name: str = "DEFAULT"
-    world_type: WorldType = WorldType.LONE
+    world_type: WorldType = WorldType.ORBITED
     planet_mass: float = 1.0
     star_mass: float = 1.0
     star_distance: float = 1.0
@@ -230,34 +197,63 @@ class World(NamedTuple):
             if self.world_type is WorldType.SATELLITE
             else self.planet_mass
         )
-        return int(round(6738 * math.pow(mass / self.density, 1.0 / 3.0), 0))
+        return int(round(6378 * math.pow(mass / self.density, 1.0 / 3.0), 0))
 
     @property
     def t(self) -> float:
-        t = 0
-        if self.world_type is WorldType.LONE:
-            t = (
-                9.6e-14
-                * self.age
-                * math.pow(self.star_mass, 2)
-                * math.pow(self.radius, 3)
-                / self.planet_mass
-                / math.pow(self.star_distance, 6)
+        if self.world_type is WorldType.SATELLITE:
+            return 0
+
+        match self.world_type:
+            case WorldType.LONE:
+                const = 9.6e-14
+                mass = self.star_mass
+                distance = self.star_distance
+            case WorldType.ORBITED:
+                const = 1e25
+                mass = self.satellite_mass
+                distance = self.primary_distance
+
+        return (
+            const
+            * self.age
+            * math.pow(mass, 2)
+            * math.pow(self.radius, 3)
+            / self.planet_mass
+            / math.pow(distance, 6)
+        )
+
+    def describe(self):
+        text = [self.name, f"{self.world_type.value} Age: {self.age:.3f} GYr"]
+        if self.world_type is WorldType.SATELLITE:
+            text.append(
+                f"Mass: {self.satellite_mass:.3f} M♁ Density: {self.density:.3f} K♁ Radius: {self.radius:.0f} km"
             )
-        elif self.world_type is WorldType.ORBITED:
-            t = (
-                1e25
-                * self.age
-                * math.pow(self.satellite_mass, 2)
-                * math.pow(self.radius, 3)
-                / self.planet_mass
-                / math.pow(self.primary_distance, 6)
+        else:
+            text.append(
+                f"Mass: {self.planet_mass:.3f} M♁ Density: {self.density:.3f} K♁ Radius: {self.radius:.0f} km"
             )
-        return t
+        text.append(
+            f"Star Mass: {self.star_mass:.3f} M☉ Distance: {self.star_distance:.3f} AU"
+        )
+        if self.world_type is WorldType.ORBITED:
+            text.append(
+                f"Satellite Mass: {self.satellite_mass:.3f} M♁ Distance: {self.primary_distance:.0f} km"
+            )
+        elif self.world_type is WorldType.SATELLITE:
+            text.append(
+                f"Primary Mass: {self.planet_mass:.3f} M♁ Distance: {self.primary_distance:.0f} km"
+            )
+        text.append("---")
+        text.append(f"Orbital Period = {self.orbital_period:.1f} hours")
+        text.append(
+            f"Rotation Period = {self.rotational_period:.1f} hours {self.lock.value}"
+        )
+        return "\n".join(text)
 
 
 # --------------------------------------------------
-def calc_orbital_period(w: "World") -> float:
+def calc_orbital_period(w: World) -> float:
     """
     Returns orbital period around primary in hours.
 
@@ -349,10 +345,10 @@ def test_rotation_period():
         star_distance=0.892,
         age=9.225,
         ecc=0.37,
-        orbital_period=6589.5,
+        orbital_period=6592.5,
     )
-    period, lock = calc_rotation_period(lone_world_2, rand=Dice(mocks=[3, 6, 5]))
-    assert period == pytest.approx(2635.8, abs=1e-1)
+    period, lock = calc_rotation_period(lone_world_2, rand=Dice(mocks=[5, 6, 5]))
+    assert period == pytest.approx(2637.0, abs=1e-1)
     assert lock == Resonance.RESONANCE_5_2
 
     orbited_world = World(
@@ -442,7 +438,7 @@ def look_up(table, selection_value):
 # Determines rotation rate of planet
 # Random selection by 3d6 + T value
 # Tuple is (dice roll, result)
-# Result is (minumum period, maximum period)
+# Result is (minimum period, maximum period)
 # Highest result is "Resonant"
 planet_rotation_rate = [
     (3, (4, 5)),

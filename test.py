@@ -77,7 +77,7 @@ def test_orbited_default_case():
     assert re.match(
         """NovaTerra
 Planet with Satellite Age: 4.568 GYr
-Mass: 1.000 M♁ Density: 1.000 K♁ Radius: 6738 km
+Mass: 1.000 M♁ Density: 1.000 K♁ Radius: 6378 km
 Star Mass: 1.000 M☉ Distance: 1.000 AU
 Satellite Mass: 0.012 M♁ Distance: 384400 km
 ---
@@ -96,7 +96,7 @@ def test_lone_default_case():
     assert re.match(
         """NovaTerra
 Lone Planet Age: 4.568 GYr
-Mass: 1.000 M♁ Density: 1.000 K♁ Radius: 6738 km
+Mass: 1.000 M♁ Density: 1.000 K♁ Radius: 6378 km
 Star Mass: 1.000 M☉ Distance: 1.000 AU
 ---
 Orbital Period = 8766.0 hours""",
@@ -114,7 +114,7 @@ def test_satellite_default_case():
     assert re.match(
         """Luna
 Satellite Age: 4.568 GYr
-Mass: 0.012 M♁ Density: 1.000 K♁ Radius: 1555 km
+Mass: 0.012 M♁ Density: 1.000 K♁ Radius: 1472 km
 Star Mass: 1.000 M☉ Distance: 1.000 AU
 Primary Mass: 1.000 M♁ Distance: 384400 km
 ---
@@ -133,7 +133,7 @@ def test_arcadia_case():
     assert re.match(
         """Arcadia
 Lone Planet Age: 4.568 GYr
-Mass: 0.930 M♁ Density: 0.879 K♁ Radius: 6866 km
+Mass: 0.930 M♁ Density: 0.879 K♁ Radius: 6499 km
 Star Mass: 0.940 M☉ Distance: 0.892 AU
 ---
 Orbital Period = 7617.0 hours""",
@@ -153,7 +153,7 @@ def test_new_luna_case():
     assert re.match(
         """New Luna
 Satellite Age: 4.568 GYr
-Mass: 0.023 M♁ Density: 0.519 K♁ Radius: 2384 km
+Mass: 0.023 M♁ Density: 0.519 K♁ Radius: 2257 km
 Star Mass: 1.000 M☉ Distance: 1.000 AU
 Primary Mass: 0.876 M♁ Distance: 175845 km
 ---
@@ -173,7 +173,7 @@ def test_lorelei_case():
     assert re.match(
         """Lorelei
 Planet with Satellite Age: 4.568 GYr
-Mass: 1.175 M♁ Density: 0.905 K♁ Radius: 7351 km
+Mass: 1.175 M♁ Density: 0.905 K♁ Radius: 6958 km
 Star Mass: 0.138 M☉ Distance: 0.078 AU
 Satellite Mass: 0.023 M♁ Distance: 457897 km
 ---
