@@ -35,7 +35,10 @@ def test_negative_numeric_inputs():
         bad = (random.random() + 0.1) * -10
         rv, out = getstatusoutput(f"{prg} NovaTerra lone {arg} {bad}")
         assert rv != 0
-        assert re.search(f'"{bad}" should be a positive float', out)
+        if arg == "-e":
+            assert re.search(f'"{bad}" should be zero or a positive float', out)
+        else:
+            assert re.search(f'"{bad}" should be a positive float', out)
 
 
 # --------------------------------------------------

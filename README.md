@@ -109,7 +109,7 @@ optional arguments:
   -k density float, --density float
                         Density of world in Earth densities (default: 1.0)
   -e eccentricity float, --ecc float
-                        Eccentricity of orbit (default: 0.01)
+                        Eccentricity of orbit (default: 0.0)
 ```
 ### Tests
 Run the test suite to ensure your program is correct:
