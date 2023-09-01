@@ -84,7 +84,7 @@ Responds to `-h` and `--help` with a usage:
 
 ```
 $ ./starch2 -h
-usage: starch2.py [-h] [-m float] [-M float] [-D float] [-s float] [-d float] [-a float] [-k float] str str
+usage: starch2.py [-h] [-m float] [-M float] [-D float] [-l float] [-s float] [-d float] [-a float] [-k float] str str
 
 Create world
 
@@ -100,6 +100,8 @@ optional arguments:
                         Mass of star in Sol masses (default: 1.0)
   -D float, --distance_star float
                         Distance of star in AU (default: 1.0)
+  -l float, --luminosity float
+                        Luminosity of atar in multiple of Sol luminosity (default: 1.0)
   -s float, --satellite_mass float
                         Mass of satellite in Earth masses (default: 0.0123)
   -d float, --distance_primary float
@@ -110,6 +112,20 @@ optional arguments:
                         Density of world in Earth densities (default: 1.0)
   -e eccentricity float, --ecc float
                         Eccentricity of orbit (default: 0.0)
+  --metal float
+                        Metallicity of system, with Sol being 1.0 (default: 1.0)
+                        
+flags:
+  -o switch, --outside_ice_line switch
+                        Is outside formation ice line (Default: False)
+  -g switch, --grand_tack switch
+                        System has undergone Grand Tack event (Default: False)
+  --oort_cloud switch
+                        Planet in Oort cloud (Default: False)
+  --green_house switch
+                        Planet has experienced runaway greenhouse event (Default: False)
+  -r switch, --rocky_sat switch
+                        Planet is rocky satellite of gas giant (Default: False)
 ```
 ### Tests
 Run the test suite to ensure your program is correct:
