@@ -12,8 +12,16 @@ from starch.starch import (
     calc_geophysics,
     adjust_for_eccentricity,
     calc_water,
+    calc_magnetic_field,
 )
-from starch.tables import Water, Lithosphere, WorldType, Resonance, Tectonics
+from starch.tables import (
+    Water,
+    Lithosphere,
+    WorldType,
+    Resonance,
+    Tectonics,
+    MagneticField,
+)
 from utils import Dice  # type: ignore
 
 # sys.path.append(os.path.abspath("../starch"))
@@ -290,10 +298,10 @@ def test_geophysics(worlds_to_use):
             new_percent,
         ) = calc_geophysics(world, randoms[n])
         exp_litho, exp_tect, exp_episodic, exp_new_water, exp_new_percent = expected[n]
-        assert lithosphere.value == exp_litho.value, f"Case {n}"
-        assert tectonics.value == exp_tect.value, f"Case {n}"
+        assert lithosphere == exp_litho, f"Case {n}"
+        assert tectonics == exp_tect, f"Case {n}"
         assert episodic_resurfacing is exp_episodic, f"Case {n}"
-        assert new_water.value == exp_new_water.value, f"Case {n}"
+        assert new_water == exp_new_water, f"Case {n}"
         assert new_percent == pytest.approx(exp_new_percent, abs=1e-1), f"Case {n}"
 
 
@@ -312,6 +320,7 @@ def test_geophysics(worlds_to_use):
         (0.6, 600.0, 200.0, Resonance.RESONANCE_3_1),
     ],
 )
+# --------------------------------------------------
 def test_calculate_resonance(e, p, expected_period, expected_lock):
     """Checks resonant orbital periods adjusted for eccentricity"""
 
@@ -319,3 +328,34 @@ def test_calculate_resonance(e, p, expected_period, expected_lock):
     lock, period = result
     assert period == expected_period
     assert lock.value == expected_lock.value
+
+
+# --------------------------------------------------
+def test_calculate_magnetic_field(worlds_to_use):
+    worlds_to_use = list(worlds_to_use)
+    worlds_to_use[0] = worlds_to_use[0]._replace(lithosphere=Lithosphere.SOFT)
+    worlds_to_use[2] = worlds_to_use[2]._replace(lithosphere=Lithosphere.EARLY_PLATE)
+    worlds_to_use[2] = worlds_to_use[2]._replace(tectonics=Tectonics.MOBILE)
+    worlds_to_use[3] = worlds_to_use[3]._replace(lithosphere=Lithosphere.ANCIENT_PLATE)
+    worlds_to_use[3] = worlds_to_use[3]._replace(tectonics=Tectonics.MOBILE)
+    worlds_to_use[5] = worlds_to_use[5]._replace(lithosphere=Lithosphere.MATURE_PLATE)
+    worlds_to_use[5] = worlds_to_use[5]._replace(tectonics=Tectonics.MOBILE)
+    randoms = (
+        Dice(mocks=[3, 4, 5]),
+        Dice(mocks=[3, 4, 3, 6, 6, 6]),
+        Dice(mocks=[1, 5, 5, 6, 1, 5, 4]),
+        Dice(mocks=[5, 6, 4, 5, 6, 6]),
+        Dice(mocks=[3, 3, 3]),
+        Dice(mocks=[2, 2, 1]),
+    )
+    expected = (
+        MagneticField.WEAK,
+        MagneticField.NONE,
+        MagneticField.MODERATE,
+        MagneticField.STRONG,
+        MagneticField.NONE,
+        MagneticField.WEAK,
+    )
+    for n, world in enumerate(worlds_to_use):
+        field = calc_magnetic_field(world, randoms[n])
+        assert field == expected[n], f"Case {n}"

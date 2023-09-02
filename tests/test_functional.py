@@ -7,7 +7,7 @@ import re
 from subprocess import getstatusoutput
 
 
-PRG = "../starch/starch.py"
+PRG = "../starch/main.py"
 
 
 # --------------------------------------------------

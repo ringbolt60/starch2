@@ -2,6 +2,14 @@
 from enum import Enum
 
 
+class CrossModEnum(Enum):
+    def __eq__(self, other):
+        if self.value == other.value:
+            return True
+        else:
+            return False
+
+
 def look_up(table, selection_value):
     result = table[-1][1]
     for row in table:
@@ -12,7 +20,7 @@ def look_up(table, selection_value):
     return result
 
 
-class Water(Enum):
+class Water(CrossModEnum):
     TRACE = "Trace"
     MINIMAL = "Minimal"
     MODERATE = "Moderate"
@@ -20,7 +28,7 @@ class Water(Enum):
     MASSIVE = "Massive"
 
 
-class Lithosphere(Enum):
+class Lithosphere(CrossModEnum):
     MOLTEN = "Molten Lithosphere"
     SOFT = "Soft Lithosphere"
     EARLY_PLATE = "Early Plate Lithosphere"
@@ -30,27 +38,21 @@ class Lithosphere(Enum):
 
 
 # --------------------------------------------------
-class WorldType(Enum):
+class WorldType(CrossModEnum):
     LONE = "Lone Planet"
     ORBITED = "Planet with Satellite"
     SATELLITE = "Satellite"
 
 
 # --------------------------------------------------
-
-
-# --------------------------------------------------
-class Tectonics(Enum):
+class Tectonics(CrossModEnum):
     NONE = "No plate tectonics"
     MOBILE = "Mobile plate tectonics"
     FIXED = "Fixed Plate Tectonics"
 
 
 # --------------------------------------------------
-
-
-# --------------------------------------------------
-class Resonance(Enum):
+class Resonance(CrossModEnum):
     NONE = "None"
     LOCK_TO_SATELLITE = "1:1 tidal lock with satellite"
     LOCK_TO_PRIMARY = "1:1 tidal lock with planet"
@@ -59,6 +61,14 @@ class Resonance(Enum):
     RESONANCE_2_1 = "2:1 resonance with star"
     RESONANCE_5_2 = "5:2 resonance with star"
     RESONANCE_3_1 = "3:1 resonance with star"
+
+
+# --------------------------------------------------
+class MagneticField(CrossModEnum):
+    NONE = "No magnetic field"
+    WEAK = "Weak magnetic field"
+    MODERATE = "Moderate Magnetic Field"
+    STRONG = "Strong Magnetic Field"
 
 
 # --------------------------------------------------
