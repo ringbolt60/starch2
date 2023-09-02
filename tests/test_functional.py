@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
-"""tests for main.py"""
+"""tests for starch.py"""
 
 import os
 import random
 import re
-import sys
 from subprocess import getstatusoutput
 
-sys.path.append(os.path.abspath("../starch2"))
 
-PRG = "../starch2/main.py"
+PRG = "../starch/starch.py"
 
 
 # --------------------------------------------------
@@ -82,7 +80,7 @@ def test_orbited_default_case():
     assert re.match(
         """NovaTerra
 Planet with Satellite Age: 4.568 GYr
-Mass: 1.000 M♁ Density: 1.000 K♁ Radius: 6378 km
+Mass: 1.000 M♁ Density: 1.000 K♁ Radius: 6378 km Gravity: 1.000 G
 Star Mass: 1.000 M☉ Distance: 1.000 AU Lumin: 1.000 L☉
 Satellite Mass: 0.012 M♁ Distance: 384400 km
 ---
@@ -101,7 +99,7 @@ def test_lone_default_case():
     assert re.match(
         """NovaTerra
 Lone Planet Age: 4.568 GYr
-Mass: 1.000 M♁ Density: 1.000 K♁ Radius: 6378 km
+Mass: 1.000 M♁ Density: 1.000 K♁ Radius: 6378 km Gravity: 1.000 G
 Star Mass: 1.000 M☉ Distance: 1.000 AU Lumin: 0.678 L☉
 ---
 Orbital Period = 8766.0 hours""",
@@ -119,7 +117,7 @@ def test_satellite_default_case():
     assert re.match(
         """Luna
 Satellite Age: 4.568 GYr
-Mass: 0.012 M♁ Density: 1.000 K♁ Radius: 1472 km
+Mass: 0.012 M♁ Density: 1.000 K♁ Radius: 1472 km Gravity: 0.231 G
 Star Mass: 1.000 M☉ Distance: 1.000 AU Lumin: 1.000 L☉
 Primary Mass: 1.000 M♁ Distance: 384400 km
 ---
@@ -138,7 +136,7 @@ def test_arcadia_case():
     assert re.match(
         """Arcadia
 Lone Planet Age: 4.568 GYr
-Mass: 0.930 M♁ Density: 0.879 K♁ Radius: 6499 km
+Mass: 0.930 M♁ Density: 0.879 K♁ Radius: 6499 km Gravity: 0.896 G
 Star Mass: 0.940 M☉ Distance: 0.892 AU Lumin: 1.000 L☉
 ---
 Orbital Period = 7617.0 hours""",
@@ -158,7 +156,7 @@ def test_new_luna_case():
     assert re.match(
         """New Luna
 Satellite Age: 4.568 GYr
-Mass: 0.023 M♁ Density: 0.519 K♁ Radius: 2257 km
+Mass: 0.023 M♁ Density: 0.519 K♁ Radius: 2257 km Gravity: 0.184 G
 Star Mass: 1.000 M☉ Distance: 1.000 AU Lumin: 0.235 L☉
 Primary Mass: 0.876 M♁ Distance: 175845 km
 ---
@@ -178,7 +176,7 @@ def test_lorelei_case():
     assert re.match(
         """Lorelei
 Planet with Satellite Age: 4.568 GYr
-Mass: 1.175 M♁ Density: 0.905 K♁ Radius: 6958 km
+Mass: 1.175 M♁ Density: 0.905 K♁ Radius: 6958 km Gravity: 0.987 G
 Star Mass: 0.138 M☉ Distance: 0.078 AU Lumin: 1.000 L☉
 Satellite Mass: 0.023 M♁ Distance: 457897 km
 ---

@@ -1,32 +1,27 @@
-"""Tests for main.py."""
+"""Tests for starch.py."""
 import os
 import sys
 
 import pytest
 
-from starch2 import main
-from starch2.main import (
+from starch.starch import (
     World,
     calc_orbital_period,
-    WorldType,
     calc_rotation_period,
-    Resonance,
-    adjust_for_eccentricity,
     calc_obliquity,
-    calc_water,
-    Water,
-    Lithosphere,
-    Tectonics,
     calc_geophysics,
+    adjust_for_eccentricity,
+    calc_water,
 )
-from starch2.utils import Dice
+from starch.tables import Water, Lithosphere, WorldType, Resonance, Tectonics
+from utils import Dice  # type: ignore
 
-sys.path.append(os.path.abspath("../starch2"))
+# sys.path.append(os.path.abspath("../starch"))
 
 
 @pytest.fixture
 def worlds_to_use():
-    """Pre-defined worlds to use in test cases."""
+    """Pre-defined worlds to use in tests cases."""
 
     return (
         # t_number-adj is 3
@@ -113,19 +108,19 @@ def test_rotation_period(worlds_to_use):
     """Checks rotation period calculated correctly"""
     period, lock = calc_rotation_period(worlds_to_use[2], rand=Dice(mocks=[3, 6, 1]))
     assert 24 <= period <= 40
-    assert lock == Resonance.NONE
+    assert lock.value == Resonance.NONE.value
 
     period, lock = calc_rotation_period(worlds_to_use[3], rand=Dice(mocks=[5, 6, 5]))
     assert period == pytest.approx(2637.0, abs=1e-1)
-    assert lock == Resonance.RESONANCE_5_2
+    assert lock.value == Resonance.RESONANCE_5_2.value
 
     period, lock = calc_rotation_period(worlds_to_use[4], rand=Dice(mocks=[1, 2, 1]))
     assert period == pytest.approx(126.2, abs=1e-1)
-    assert lock == Resonance.LOCK_TO_SATELLITE
+    assert lock.value == Resonance.LOCK_TO_SATELLITE.value
 
     period, lock = calc_rotation_period(worlds_to_use[5])
     assert period == pytest.approx(215.3, abs=1e-1)
-    assert lock == Resonance.LOCK_TO_PRIMARY
+    assert lock.value == Resonance.LOCK_TO_PRIMARY.value
 
 
 # --------------------------------------------------
@@ -243,12 +238,48 @@ def test_geophysics(worlds_to_use):
         Dice(mocks=[2, 2, 1]),
     )
     expected = (
-        (Lithosphere.MATURE_PLATE, Tectonics.FIXED, True, Water.MODERATE, 5.7),
-        (Lithosphere.ANCIENT_PLATE, Tectonics.MOBILE, False, Water.TRACE, 0),
-        (Lithosphere.MATURE_PLATE, Tectonics.MOBILE, False, Water.MODERATE, 61.0),
-        (Lithosphere.SOLID, Tectonics.NONE, False, Water.EXTENSIVE, 100),
-        (Lithosphere.SOFT, Tectonics.NONE, False, Water.TRACE, 0),
-        (Lithosphere.MOLTEN, Tectonics.NONE, False, Water.TRACE, 0),
+        (
+            Lithosphere.MATURE_PLATE,
+            Tectonics.FIXED,
+            True,
+            Water.MODERATE,
+            5.7,
+        ),
+        (
+            Lithosphere.ANCIENT_PLATE,
+            Tectonics.FIXED,
+            False,
+            Water.TRACE,
+            0,
+        ),
+        (
+            Lithosphere.MATURE_PLATE,
+            Tectonics.MOBILE,
+            False,
+            Water.MODERATE,
+            61.0,
+        ),
+        (
+            Lithosphere.SOLID,
+            Tectonics.NONE,
+            False,
+            Water.EXTENSIVE,
+            100,
+        ),
+        (
+            Lithosphere.SOFT,
+            Tectonics.NONE,
+            False,
+            Water.TRACE,
+            0,
+        ),
+        (
+            Lithosphere.MOLTEN,
+            Tectonics.NONE,
+            False,
+            Water.TRACE,
+            0,
+        ),
     )
     for n, world in enumerate(worlds_to_use):
         (
@@ -287,4 +318,4 @@ def test_calculate_resonance(e, p, expected_period, expected_lock):
     result = adjust_for_eccentricity(ecc=e, period=p)
     lock, period = result
     assert period == expected_period
-    assert lock == expected_lock
+    assert lock.value == expected_lock.value

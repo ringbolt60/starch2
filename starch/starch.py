@@ -8,10 +8,9 @@ Purpose: Create worlds.
 import argparse
 import math
 import random
-from enum import Enum
 from typing import NamedTuple
 
-import tables
+import tables as t
 from utils import Dice
 
 
@@ -178,11 +177,11 @@ def get_args():
             parser.error(f'"{a}" should be zero or a positive float')
 
     if args.type == "lone":
-        args.type = WorldType.LONE
+        args.type = t.WorldType.LONE
     if args.type == "orbited":
-        args.type = WorldType.ORBITED
+        args.type = t.WorldType.ORBITED
     if args.type == "satellite":
-        args.type = WorldType.SATELLITE
+        args.type = t.WorldType.SATELLITE
 
     return args
 
@@ -235,54 +234,9 @@ def main():
 
 
 # --------------------------------------------------
-class WorldType(Enum):
-    LONE = "Lone Planet"
-    ORBITED = "Planet with Satellite"
-    SATELLITE = "Satellite"
-
-
-# --------------------------------------------------
-class Water(Enum):
-    TRACE = "Trace"
-    MINIMAL = "Minimal"
-    MODERATE = "Moderate"
-    EXTENSIVE = "Extensive"
-    MASSIVE = "Massive"
-
-
-# --------------------------------------------------
-class Tectonics(Enum):
-    NONE = "No plate tectonics"
-    MOBILE = "Mobile plate tectonics"
-    FIXED = "Fixed Plate Tectonics"
-
-
-# --------------------------------------------------
-class Lithosphere(Enum):
-    MOLTEN = "Molten Lithosphere"
-    SOFT = "Soft Lithosphere"
-    EARLY_PLATE = "Early Plate Lithosphere"
-    MATURE_PLATE = "Mature Plate Lithosphere"
-    ANCIENT_PLATE = "Ancient Plate Lithosphere"
-    SOLID = "Solid Plate Lithosphere"
-
-
-# --------------------------------------------------
-class Resonance(Enum):
-    NONE = ""
-    LOCK_TO_SATELLITE = "1:1 tidal lock with satellite"
-    LOCK_TO_PRIMARY = "1:1 tidal lock with planet"
-    LOCK_TO_STAR = "1:1 tidal lock with star"
-    RESONANCE_3_2 = "3:2 resonance with star"
-    RESONANCE_2_1 = "2:1 resonance with star"
-    RESONANCE_5_2 = "5:2 resonance with star"
-    RESONANCE_3_1 = "3:1 resonance with star"
-
-
-# --------------------------------------------------
 class World(NamedTuple):
     name: str = "DEFAULT"
-    world_type: WorldType = WorldType.ORBITED
+    world_type: t.WorldType = t.WorldType.ORBITED
     planet_mass: float = 1.0
     star_mass: float = 1.0
     star_distance: float = 1.0
@@ -293,7 +247,7 @@ class World(NamedTuple):
     orbital_period: float = 7617.0
     density: float = 1.0
     rotational_period: float = 24.0
-    lock: Resonance = Resonance.NONE
+    lock: t.Resonance = t.Resonance.NONE
     obliquity: int = 0
     unstable_obliquity: bool = False
     luminosity: float = 1.0
@@ -302,11 +256,11 @@ class World(NamedTuple):
     oort_cloud: bool = False
     green_house: bool = False
     rocky_sat_of_gas_giant: bool = False
-    water_prevalence: Water = Water.TRACE
+    water_prevalence: t.Water = t.Water.TRACE
     water_percent: float = 0.0
     metal: float = 1.0
-    lithosphere: Lithosphere = Lithosphere.SOLID
-    tectonics: Tectonics = Tectonics.NONE
+    lithosphere: t.Lithosphere = t.Lithosphere.SOLID
+    tectonics: t.Tectonics = t.Tectonics.NONE
     episodic_resurfacing: bool = False
     orbital_tidal_heating: bool = False
 
@@ -314,25 +268,24 @@ class World(NamedTuple):
     def radius(self):
         mass = (
             self.satellite_mass
-            if self.world_type is WorldType.SATELLITE
+            if self.world_type.value == t.WorldType.SATELLITE.value
             else self.planet_mass
         )
         return int(round(6378 * math.pow(mass / self.density, 1.0 / 3.0), 0))
 
     @property
     def t_number(self) -> float:
-        if self.world_type is WorldType.SATELLITE:
+        if self.world_type.value == t.WorldType.SATELLITE.value:
             return 0
 
-        match self.world_type:
-            case WorldType.LONE:
-                const = 9.6e-14
-                mass = self.star_mass
-                distance = self.star_distance
-            case WorldType.ORBITED:
-                const = 1e25
-                mass = self.satellite_mass
-                distance = self.primary_distance
+        if self.world_type.value == t.WorldType.LONE.value:
+            const = 9.6e-14
+            mass = self.star_mass
+            distance = self.star_distance
+        else:
+            const = 1e25
+            mass = self.satellite_mass
+            distance = self.primary_distance
 
         return (
             const
@@ -345,12 +298,12 @@ class World(NamedTuple):
 
     @property
     def t_adj(self) -> int:
-        t = round(self.t_number * 12, 0)
-        return int(t)
+        ta = round(self.t_number * 12, 0)
+        return int(ta)
 
     @property
     def local_day_length(self) -> float | None:
-        if self.lock is Resonance.LOCK_TO_STAR:
+        if self.lock.value == t.Resonance.LOCK_TO_STAR.value:
             return None
         else:
             return (
@@ -361,7 +314,7 @@ class World(NamedTuple):
 
     @property
     def days_in_local_year(self) -> float | str:
-        if self.lock is Resonance.LOCK_TO_STAR:
+        if self.lock.value == t.Resonance.LOCK_TO_STAR.value:
             return "N/A"
         else:
             return self.orbital_period / self.local_day_length
@@ -387,29 +340,30 @@ class World(NamedTuple):
     def gravity(self) -> float:
         mass = (
             self.satellite_mass
-            if self.world_type is WorldType.SATELLITE
+            if self.world_type.value == t.WorldType.SATELLITE.value
             else self.planet_mass
         )
         return math.pow(mass * math.pow(self.density, 2), 1.0 / 3.0)
 
     def describe(self):
         text = [self.name, f"{self.world_type.value} Age: {self.age:.3f} GYr"]
-        if self.world_type is WorldType.SATELLITE:
+        if self.world_type.value == t.WorldType.SATELLITE.value:
             text.append(
-                f"Mass: {self.satellite_mass:.3f} M♁ Density: {self.density:.3f} K♁ Radius: {self.radius:.0f} km"
+                f"Mass: {self.satellite_mass:.3f} M♁ Density: {self.density:.3f} K♁ Radius: {self.radius:.0f} km "
+                f"Gravity: {self.gravity:.3f} G"
             )
         else:
             text.append(
-                f"Mass: {self.planet_mass:.3f} M♁ Density: {self.density:.3f} K♁ Radius: {self.radius:.0f} km"
+                f"Mass: {self.planet_mass:.3f} M♁ Density: {self.density:.3f} K♁ Radius: {self.radius:.0f} km Gravity: {self.gravity:.3f} G"
             )
         text.append(
             f"Star Mass: {self.star_mass:.3f} M☉ Distance: {self.star_distance:.3f} AU Lumin: {self.luminosity:.3f} L☉"
         )
-        if self.world_type is WorldType.ORBITED:
+        if self.world_type.value == t.WorldType.ORBITED.value:
             text.append(
                 f"Satellite Mass: {self.satellite_mass:.3f} M♁ Distance: {self.primary_distance:.0f} km"
             )
-        elif self.world_type is WorldType.SATELLITE:
+        elif self.world_type.value == t.WorldType.SATELLITE.value:
             text.append(
                 f"Primary Mass: {self.planet_mass:.3f} M♁ Distance: {self.primary_distance:.0f} km"
             )
@@ -436,7 +390,7 @@ class World(NamedTuple):
         )
 
         text.append(
-            f"{self.lithosphere.value} {self.tectonics.value} {'Episodic Resurfacing' if self.episodic_resurfacing else ''}"
+            f"{self.lithosphere.value} / {self.tectonics.value}{' / Episodic Resurfacing' if self.episodic_resurfacing else ''}"
         )
         return "\n".join(text)
 
@@ -448,7 +402,7 @@ def calc_orbital_period(w: World) -> float:
 
     Implements Step 18 pp 92,93. Constants tweaked to make earth and Luna exact.
     """
-    if w.world_type is WorldType.SATELLITE:
+    if w.world_type.value == t.WorldType.SATELLITE.value:
         return 2.768e-6 * math.sqrt(
             math.pow(w.primary_distance, 3) / (w.satellite_mass + w.planet_mass)
         )
@@ -456,19 +410,19 @@ def calc_orbital_period(w: World) -> float:
 
 
 # --------------------------------------------------
-def calc_rotation_period(w: World, rand: Dice = Dice()) -> (float, Resonance):
+def calc_rotation_period(w: World, rand: Dice = Dice()) -> (float, t.Resonance):
     """
     Returns sidereal rotation period of world.
 
     Implements Step 19 pp 93-95. Constants tweaked to make earth and Luna exact.
     """
     roll = sum(rand.next() for _ in range(3))
-    if w.world_type is WorldType.SATELLITE:
-        return w.orbital_period, Resonance.LOCK_TO_PRIMARY
+    if w.world_type.value == t.WorldType.SATELLITE.value:
+        return w.orbital_period, t.Resonance.LOCK_TO_PRIMARY
 
     t_adjusted = w.t_adj + roll
     if w.t_number >= 2 or t_adjusted >= 24:
-        if w.world_type is WorldType.LONE:
+        if w.world_type.value == t.WorldType.LONE.value:
             period = w.orbital_period
             lock, period = adjust_for_eccentricity(w.ecc, period)
             return period, lock
@@ -477,13 +431,13 @@ def calc_rotation_period(w: World, rand: Dice = Dice()) -> (float, Resonance):
             * math.sqrt(
                 math.pow(w.primary_distance, 3) / (w.satellite_mass + w.planet_mass)
             ),
-            Resonance.LOCK_TO_SATELLITE,
+            t.Resonance.LOCK_TO_SATELLITE,
         )
 
-    p = tables.look_up(tables.planet_rotation_rate, t_adjusted)
+    p = t.look_up(t.planet_rotation_rate, t_adjusted)
     lower, upper = p
     period = random.uniform(lower, upper)
-    lock = Resonance.NONE
+    lock = t.Resonance.NONE
     if period >= w.orbital_period:
         period = w.orbital_period
         lock, period = adjust_for_eccentricity(w.ecc, period)
@@ -491,29 +445,29 @@ def calc_rotation_period(w: World, rand: Dice = Dice()) -> (float, Resonance):
 
 
 # --------------------------------------------------
-def calc_water(w: World, rand: Dice = Dice()) -> (Water, int, bool):
+def calc_water(w: World, rand: Dice = Dice()) -> (t.Water, int, bool):
     """
     Returns the water prevalence and percentage.
 
     Implements Step 23 pp 101-103.
     """
-    water = Water.TRACE
+    water = t.Water.TRACE
     percentage = 0
     gh = False
 
     if w.m_number <= 2:
-        water = Water.MASSIVE
+        water = t.Water.MASSIVE
         percentage = 100
     elif w.m_number >= 29:
         if w.black_body_temp >= 125 or w.rocky_sat_of_gas_giant:
-            water = Water.TRACE
+            water = t.Water.TRACE
             percentage = 0
         else:
-            water = Water.MASSIVE
+            water = t.Water.MASSIVE
             percentage = 100
     else:
         if w.outside_ice_line:
-            water = Water.MASSIVE
+            water = t.Water.MASSIVE
             percentage = 100
         else:
             mod = -w.m_number
@@ -522,19 +476,24 @@ def calc_water(w: World, rand: Dice = Dice()) -> (Water, int, bool):
             if w.oort_cloud:
                 mod += 3
         look_up_value = sum(rand.next() for _ in range(3)) + mod
-        lower, upper, water = tables.look_up(tables.hydro_cover, look_up_value)
+        lower, upper, water = t.look_up(t.hydro_cover, look_up_value)
         percentage = random.uniform(lower, upper)
 
     if w.m_number > 2 and w.black_body_temp >= 300:
-        if water is Water.MINIMAL:
+        if water.value == t.Water.MINIMAL.value:
             if sum(rand.next() for _ in range(3)) + w.black_body_temp >= 318:
-                water = Water.TRACE
+                water = t.Water.TRACE
                 percentage = 0
         if water.value in [
-            e.value for e in [Water.MODERATE, Water.EXTENSIVE, Water.MASSIVE]
+            e.value
+            for e in [
+                t.Water.MODERATE,
+                t.Water.EXTENSIVE,
+                t.Water.MASSIVE,
+            ]
         ]:
             if sum(rand.next() for _ in range(3)) + w.black_body_temp >= 318:
-                water = Water.TRACE
+                water = t.Water.TRACE
                 percentage = 0
                 gh = True
 
@@ -547,18 +506,18 @@ def adjust_for_eccentricity(ecc=0.0, period=1.0):
     multiplier = 1
     lock = ""
     if ecc <= 0.12:
-        lock = Resonance.LOCK_TO_STAR
+        lock = t.Resonance.LOCK_TO_STAR
     elif 0.12 < ecc < 0.25:
         multiplier = 2.0 / 3.0
-        lock = Resonance.RESONANCE_3_2
+        lock = t.Resonance.RESONANCE_3_2
     elif 0.25 <= ecc < 0.35:
         multiplier = 0.5
-        lock = Resonance.RESONANCE_2_1
+        lock = t.Resonance.RESONANCE_2_1
     elif 0.35 <= ecc < 0.45:
         multiplier = 0.4
-        lock = Resonance.RESONANCE_5_2
+        lock = t.Resonance.RESONANCE_5_2
     else:
-        lock = Resonance.RESONANCE_3_1
+        lock = t.Resonance.RESONANCE_3_1
         multiplier = 1.0 / 3.0
     return lock, period * multiplier
 
@@ -574,11 +533,14 @@ def calc_obliquity(world: World, rand: Dice = Dice()) -> (int, bool):
     instability = False
     mod = 0
 
-    if world.world_type is WorldType.SATELLITE or world.lock != Resonance.NONE:
+    if (
+        world.world_type.value == t.WorldType.SATELLITE.value
+        or world.lock != t.Resonance.NONE
+    ):
         obl = roll - 8 if roll > 8 else 0
         return obl, instability
 
-    if world.world_type is WorldType.LONE:
+    if world.world_type.value == t.WorldType.LONE.value:
         roll2 = sum(rand.next() for _ in range(3))
         if not (8 <= roll2 <= 13):
             mod = -7
@@ -593,10 +555,10 @@ def calc_obliquity(world: World, rand: Dice = Dice()) -> (int, bool):
             roll4 = sum(rand.next() for _ in range(3))
             obl = 90 - roll4 if roll4 > 7 else 90
         else:
-            lower, upper = tables.look_up(tables.planet_extreme_obliquity_table, roll3)
+            lower, upper = t.look_up(t.planet_extreme_obliquity_table, roll3)
             obl = random.randint(lower, upper)
     else:
-        lower, upper = tables.look_up(tables.planet_obliquity_table, look_up_value)
+        lower, upper = t.look_up(t.planet_obliquity_table, look_up_value)
         obl = random.randint(lower, upper)
 
     return obl, instability
@@ -605,14 +567,14 @@ def calc_obliquity(world: World, rand: Dice = Dice()) -> (int, bool):
 # --------------------------------------------------
 def calc_geophysics(
     w: World, rand: Dice = Dice()
-) -> (Lithosphere, Tectonics, bool, Water, float):
+) -> (t.Lithosphere, t.Tectonics, bool, t.Water, float):
     """Calculate planet geophysical parameters
 
     Implements Step 24, pp 104-108
     """
     lith, tect, ep_resurf, new_water, new_percent = (
-        Lithosphere.SOLID,
-        Tectonics.NONE,
+        t.Lithosphere.SOLID,
+        t.Tectonics.NONE,
         False,
         w.water_prevalence,
         w.water_percent,
@@ -622,68 +584,73 @@ def calc_geophysics(
     radiogenic_heat_mod = int(round(-10 * math.log10(w.metal), 0))
     roll1 = sum(rand.next() for _ in range(3))
     lookup = age_mod + primordial_heat_mod + radiogenic_heat_mod + roll1
-    lith, ordinal = tables.look_up(tables.lithosphere, lookup)
+    lith, ordinal = t.look_up(t.lithosphere, lookup)
 
     f = 0
-    if w.orbital_tidal_heating and w.world_type is WorldType.SATELLITE:
+    if w.orbital_tidal_heating and w.world_type.value == t.WorldType.SATELLITE.value:
         f = 1.59e15 * w.planet_mass * w.radius / math.pow(w.primary_distance, 3)
 
-    if (w.lock is not Resonance.NONE) and (w.world_type is not WorldType.SATELLITE):
+    if (w.lock.value != t.Resonance.NONE.value) and (
+        w.world_type.value != t.WorldType.SATELLITE.value
+    ):
         if (
             w.ecc >= 0.05
             or w.lock
             in (
-                Resonance.RESONANCE_5_2,
-                Resonance.RESONANCE_2_1,
-                Resonance.RESONANCE_3_2,
-                Resonance.RESONANCE_3_1,
+                t.Resonance.RESONANCE_5_2,
+                t.Resonance.RESONANCE_2_1,
+                t.Resonance.RESONANCE_3_2,
+                t.Resonance.RESONANCE_3_1,
             )
             or w.orbital_tidal_heating
         ):
             f = 1.57e-4 * w.star_mass * w.radius / math.pow(w.star_distance, 3)
 
     if f > 0:
-        new_lith, new_ordinal = tables.look_up(tables.lithosphere_stressed, f)
+        new_lith, new_ordinal = t.look_up(t.lithosphere_stressed, f)
         if new_ordinal < ordinal:
             lith = new_lith
 
     if lith.value in [
         e.value
         for e in (
-            Lithosphere.EARLY_PLATE,
-            Lithosphere.MATURE_PLATE,
-            Lithosphere.ANCIENT_PLATE,
+            t.Lithosphere.EARLY_PLATE,
+            t.Lithosphere.MATURE_PLATE,
+            t.Lithosphere.ANCIENT_PLATE,
         )
     ]:
         roll2 = sum(rand.next() for _ in range(3))
-        if w.water_prevalence in (Water.EXTENSIVE, Water.MASSIVE):
+        if w.water_prevalence in (t.Water.EXTENSIVE, t.Water.MASSIVE):
             roll2 += 6
-        if w.water_prevalence in (Water.MINIMAL, Water.TRACE):
+        if w.water_prevalence in (t.Water.MINIMAL, t.Water.TRACE):
             roll2 -= 6
-        if lith is Lithosphere.EARLY_PLATE:
+        if lith.value == t.Lithosphere.EARLY_PLATE.value:
             roll2 += 2
-        if lith is Lithosphere.ANCIENT_PLATE:
+        if lith.value == t.Lithosphere.ANCIENT_PLATE.value:
             roll2 -= 2
-        tect = Tectonics.MOBILE if roll2 >= 11 else Tectonics.FIXED
+        tect = t.Tectonics.MOBILE if roll2 >= 11 else t.Tectonics.FIXED
 
     if (
         lith.value
-        in (e.value for e in (Lithosphere.EARLY_PLATE, Lithosphere.MATURE_PLATE))
-        and tect is Tectonics.FIXED
+        in (e.value for e in (t.Lithosphere.EARLY_PLATE, t.Lithosphere.MATURE_PLATE))
+        and tect.value == t.Tectonics.FIXED.value
     ):
         ep_resurf = True
 
-    if lith is Lithosphere.MOLTEN and new_water is not Water.MASSIVE:
-        new_water = Water.TRACE
+    if (
+        lith.value == t.Lithosphere.MOLTEN.value
+        and new_water.value != t.Water.MASSIVE.value
+    ):
+        new_water = t.Water.TRACE
         new_percent = 0
 
-    if new_water is Water.EXTENSIVE:
+    if new_water.value == t.Water.EXTENSIVE.value:
         roll3 = sum(rand.next() for _ in range(3))
-        if lith.value in [e.value for e in [Lithosphere.SOFT, Lithosphere.SOLID]]:
-            # if lith in (Lithosphere.SOFT, Lithosphere.SOLID):
+        if lith.value in [e.value for e in [t.Lithosphere.SOFT, t.Lithosphere.SOLID]]:
+            # if lith in (t.Lithosphere.SOFT, t.Lithosphere.SOLID):
             new_percent += roll3 + 10
         if lith.value in [
-            e.value for e in [Lithosphere.EARLY_PLATE, Lithosphere.ANCIENT_PLATE]
+            e.value for e in [t.Lithosphere.EARLY_PLATE, t.Lithosphere.ANCIENT_PLATE]
         ]:
             new_percent += roll3
         if new_percent > 100:
