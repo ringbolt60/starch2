@@ -1,74 +1,4 @@
 # --------------------------------------------------
-from enum import Enum
-
-
-class CrossModEnum(Enum):
-    def __eq__(self, other):
-        if self.value == other.value:
-            return True
-        else:
-            return False
-
-
-def look_up(table, selection_value):
-    result = table[-1][1]
-    for row in table:
-        score, entry = row
-        if selection_value <= score:
-            result = entry
-            break
-    return result
-
-
-class Water(CrossModEnum):
-    TRACE = "Trace"
-    MINIMAL = "Minimal"
-    MODERATE = "Moderate"
-    EXTENSIVE = "Extensive"
-    MASSIVE = "Massive"
-
-
-class Lithosphere(CrossModEnum):
-    MOLTEN = "Molten Lithosphere"
-    SOFT = "Soft Lithosphere"
-    EARLY_PLATE = "Early Plate Lithosphere"
-    MATURE_PLATE = "Mature Plate Lithosphere"
-    ANCIENT_PLATE = "Ancient Plate Lithosphere"
-    SOLID = "Solid Plate Lithosphere"
-
-
-# --------------------------------------------------
-class WorldType(CrossModEnum):
-    LONE = "Lone Planet"
-    ORBITED = "Planet with Satellite"
-    SATELLITE = "Satellite"
-
-
-# --------------------------------------------------
-class Tectonics(CrossModEnum):
-    NONE = "No plate tectonics"
-    MOBILE = "Mobile plate tectonics"
-    FIXED = "Fixed Plate Tectonics"
-
-
-# --------------------------------------------------
-class Resonance(CrossModEnum):
-    NONE = "None"
-    LOCK_TO_SATELLITE = "1:1 tidal lock with satellite"
-    LOCK_TO_PRIMARY = "1:1 tidal lock with planet"
-    LOCK_TO_STAR = "1:1 tidal lock with star"
-    RESONANCE_3_2 = "3:2 resonance with star"
-    RESONANCE_2_1 = "2:1 resonance with star"
-    RESONANCE_5_2 = "5:2 resonance with star"
-    RESONANCE_3_1 = "3:1 resonance with star"
-
-
-# --------------------------------------------------
-class MagneticField(CrossModEnum):
-    NONE = "No magnetic field"
-    WEAK = "Weak magnetic field"
-    MODERATE = "Moderate Magnetic Field"
-    STRONG = "Strong Magnetic Field"
 
 
 # --------------------------------------------------
@@ -150,51 +80,51 @@ planet_extreme_obliquity_table = [
 # Look up table
 # Result is (minimum cover, maximum cover, prevalence)
 hydro_cover = [
-    (-5, (0, 0, Water.TRACE)),
-    (-1, (0, 1, Water.MINIMAL)),
-    (0, (0, 2, Water.MINIMAL)),
-    (1, (1, 3, Water.MINIMAL)),
-    (2, (2, 5, Water.MINIMAL)),
-    (3, (3, 7.5, Water.MINIMAL)),
-    (4, (5, 10, Water.MODERATE)),
-    (5, (7.5, 20, Water.MODERATE)),
-    (6, (10, 30, Water.MODERATE)),
-    (7, (20, 40, Water.MODERATE)),
-    (8, (30, 50, Water.MODERATE)),
-    (9, (40, 55, Water.MODERATE)),
-    (10, (50, 60, Water.MODERATE)),
-    (11, (55, 65, Water.MODERATE)),
-    (12, (60, 70, Water.EXTENSIVE)),
-    (13, (65, 75, Water.EXTENSIVE)),
-    (14, (70, 80, Water.EXTENSIVE)),
-    (15, (75, 85, Water.EXTENSIVE)),
-    (16, (80, 90, Water.EXTENSIVE)),
-    (17, (85, 95, Water.EXTENSIVE)),
-    (18, (90, 97.5, Water.EXTENSIVE)),
-    (19, (95, 100, Water.EXTENSIVE)),
-    (20, (100, 100, Water.MASSIVE)),
+    (-5, (0, 0, "trace")),
+    (-1, (0, 1, "minimal")),
+    (0, (0, 2, "minimal")),
+    (1, (1, 3, "minimal")),
+    (2, (2, 5, "minimal")),
+    (3, (3, 7.5, "minimal")),
+    (4, (5, 10, "moderate")),
+    (5, (7.5, 20, "moderate")),
+    (6, (10, 30, "moderate")),
+    (7, (20, 40, "moderate")),
+    (8, (30, 50, "moderate")),
+    (9, (40, 55, "moderate")),
+    (10, (50, 60, "moderate")),
+    (11, (55, 65, "moderate")),
+    (12, (60, 70, "extensive")),
+    (13, (65, 75, "extensive")),
+    (14, (70, 80, "extensive")),
+    (15, (75, 85, "extensive")),
+    (16, (80, 90, "extensive")),
+    (17, (85, 95, "extensive")),
+    (18, (90, 97.5, "extensive")),
+    (19, (95, 100, "extensive")),
+    (20, (100, 100, "massive")),
 ]
 
 # Deternines the status of the lithosphere
 # Random selection by 3d6 with h as modifier
 # result is Lithosphere enum
 lithosphere = [
-    (15, (Lithosphere.MOLTEN, 1)),
-    (23, (Lithosphere.SOFT, 2)),
-    (31, (Lithosphere.EARLY_PLATE, 3)),
-    (63, (Lithosphere.MATURE_PLATE, 4)),
-    (87, (Lithosphere.ANCIENT_PLATE, 5)),
-    (88, (Lithosphere.SOLID, 6)),
+    (15, ("molten", 1)),
+    (23, ("soft", 2)),
+    (31, ("early_plate", 3)),
+    (63, ("mature_plate", 4)),
+    (87, ("ancient_plate", 5)),
+    (88, ("solid", 6)),
 ]
 
 # Determines the status of the lithosphere for tidally stressed planet
 # Random selection by f
 # result is Lithosphere enum
 lithosphere_stressed = [
-    (200, (Lithosphere.SOLID, 6)),
-    (630, (Lithosphere.ANCIENT_PLATE, 5)),
-    (2000, (Lithosphere.MATURE_PLATE, 4)),
-    (6300, (Lithosphere.EARLY_PLATE, 3)),
-    (20000, (Lithosphere.SOFT, 2)),
-    (20001, (Lithosphere.MOLTEN, 1)),
+    (200, ("solid", 6)),
+    (630, ("ancient_plate", 5)),
+    (2000, ("mature_plate", 4)),
+    (6300, ("early_plate", 3)),
+    (20000, ("soft", 2)),
+    (20001, ("molten", 1)),
 ]

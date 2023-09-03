@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""tests for starch.py"""
+"""tests for world.py"""
 
 import os
 import random
@@ -7,7 +7,7 @@ import re
 from subprocess import getstatusoutput
 
 
-PRG = "../starch/main.py"
+PRG = "../starch/starch.py"
 
 
 # --------------------------------------------------

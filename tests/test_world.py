@@ -1,10 +1,10 @@
-"""Tests for starch.py."""
+"""Tests for world.py."""
 import os
 import sys
 
 import pytest
 
-from starch.starch import (
+from starch.world import (
     World,
     calc_orbital_period,
     calc_rotation_period,
@@ -13,8 +13,14 @@ from starch.starch import (
     adjust_for_eccentricity,
     calc_water,
     calc_magnetic_field,
+    calc_arf,
+    calc_mass_hydrogen,
+    calc_mass_helium,
+    calc_mass_nitrogen,
+    WorldClass,
+    calc_world_class,
 )
-from starch.tables import (
+from starch.world import (
     Water,
     Lithosphere,
     WorldType,
@@ -359,3 +365,175 @@ def test_calculate_magnetic_field(worlds_to_use):
     for n, world in enumerate(worlds_to_use):
         field = calc_magnetic_field(world, randoms[n])
         assert field == expected[n], f"Case {n}"
+
+
+def test_calculate_arf(worlds_to_use):
+    worlds_to_use = list(worlds_to_use)
+    worlds_to_use[0] = worlds_to_use[0]._replace(lithosphere=Lithosphere.SOFT)
+    worlds_to_use[2] = worlds_to_use[2]._replace(lithosphere=Lithosphere.EARLY_PLATE)
+    worlds_to_use[2] = worlds_to_use[2]._replace(water_prevalence=Water.MASSIVE)
+    worlds_to_use[2] = worlds_to_use[2]._replace(magnetic_field=MagneticField.STRONG)
+    worlds_to_use[3] = worlds_to_use[3]._replace(lithosphere=Lithosphere.ANCIENT_PLATE)
+    worlds_to_use[4] = worlds_to_use[4]._replace(green_house=True)
+    worlds_to_use[4] = worlds_to_use[4]._replace(magnetic_field=MagneticField.MODERATE)
+    worlds_to_use[5] = worlds_to_use[5]._replace(lithosphere=Lithosphere.SOLID)
+    worlds_to_use[5] = worlds_to_use[5]._replace(magnetic_field=MagneticField.WEAK)
+    randoms = (
+        Dice(mocks=[3, 4, 5]),
+        Dice(mocks=[3, 4, 3, 6, 6, 6]),
+        Dice(mocks=[1, 5, 5, 6, 1, 5, 4]),
+        Dice(mocks=[5, 6, 4, 5, 6, 6]),
+        Dice(mocks=[3, 3, 3]),
+        Dice(mocks=[2, 2, 1]),
+    )
+    expected = (
+        1.0,
+        0.0,
+        1.9,
+        0.7,
+        0.9,
+        0.0,
+    )
+    for n, world in enumerate(worlds_to_use):
+        field = calc_arf(world, randoms[n])
+        assert field == expected[n], f"Case {n}"
+
+
+def test_calc_mass_hydrogen(mocker):
+    worlds = [mocker.Mock(World) for _ in range(3)]
+    worlds[0].configure_mock(arf=1.2, m_number=2)
+    worlds[1].configure_mock(arf=1.1, m_number=22)
+    worlds[2].configure_mock(arf=0.0, m_number=1)
+
+    expected = (
+        (108.0, 132.0),
+        (0.0, 0.0),
+        (0.0, 0.0),
+    )
+    for n, world in enumerate(worlds):
+        field = calc_mass_hydrogen(world)
+        lower, upper = expected[n]
+        assert lower <= field <= upper, f"Case {n}"
+
+
+def test_calc_mass_helium(mocker):
+    worlds = [mocker.Mock(World) for _ in range(6)]
+    worlds[0].configure_mock(arf=0.7, m_number=2)
+    worlds[1].configure_mock(arf=0.9, m_number=3)
+    worlds[2].configure_mock(arf=2.1, m_number=4)
+    worlds[3].configure_mock(arf=0.0, m_number=3)
+    worlds[4].configure_mock(arf=2.0, m_number=5)
+    worlds[5].configure_mock(arf=1.7, m_number=1)
+
+    expected = (
+        (15.75, 19.25),
+        (4.05, 4.95),
+        (1.89, 2.31),
+        (0.0, 0.0),
+        (0.0, 0.0),
+        (38.25, 46.75),
+    )
+    for n, world in enumerate(worlds):
+        field = calc_mass_helium(world)
+        lower, upper = expected[n]
+        assert lower <= field <= upper, f"Case {n}"
+
+
+def test_calc_mass_nitrogen(mocker):
+    worlds = [mocker.Mock(World) for _ in range(6)]
+    worlds[0].configure_mock(
+        arf=2.7, m_number=2, black_body_temp=167, water_prevalence=Water.TRACE
+    )
+    worlds[1].configure_mock(
+        arf=1.0, m_number=14, black_body_temp=85, water_prevalence=Water.MASSIVE
+    )
+    worlds[2].configure_mock(
+        arf=1.0, m_number=8, black_body_temp=278, water_prevalence=Water.EXTENSIVE
+    )
+    worlds[3].configure_mock(
+        arf=0.0, m_number=25, black_body_temp=124, water_prevalence=Water.MASSIVE
+    )
+    worlds[4].configure_mock(
+        arf=2.7, m_number=32, black_body_temp=167, water_prevalence=Water.TRACE
+    )
+    worlds[5].configure_mock(
+        arf=1.6, m_number=1, black_body_temp=77, water_prevalence=Water.TRACE
+    )
+
+    expected = (
+        (1.701, 2.079),
+        (9.45, 11.55),
+        (0.63, 0.77),
+        (0.0, 0.0),
+        (0.0, 0.0),
+        (0.0, 0.0),
+    )
+    for n, world in enumerate(worlds):
+        field = calc_mass_nitrogen(world)
+        lower, upper = expected[n]
+        assert lower <= field <= upper, f"Case {n}"
+
+
+def test_calc_world_class(mocker):
+    worlds = [mocker.Mock(World) for _ in range(6)]
+    worlds[0].configure_mock(
+        green_house=True,
+        black_body_temp=85,
+        mass_hydrogen=55.3,
+        mass_helium=23.0,
+        mass_nitrogen=0.0,
+        m_number=7,
+    )
+    worlds[1].configure_mock(
+        green_house=False,
+        black_body_temp=105,
+        mass_hydrogen=70.0,
+        mass_helium=23.0,
+        mass_nitrogen=2.0,
+        m_number=2,
+    )
+    worlds[2].configure_mock(
+        green_house=False,
+        black_body_temp=105,
+        mass_hydrogen=0.0,
+        mass_helium=23.0,
+        mass_nitrogen=2.0,
+        m_number=3,
+    )
+    worlds[3].configure_mock(
+        green_house=False,
+        black_body_temp=278,
+        mass_hydrogen=0.0,
+        mass_helium=2.2,
+        mass_nitrogen=1.2,
+        m_number=8,
+    )
+    worlds[4].configure_mock(
+        green_house=False,
+        black_body_temp=205,
+        mass_hydrogen=0.0,
+        mass_helium=0.0,
+        mass_nitrogen=0.0,
+        m_number=32,
+    )
+    worlds[5].configure_mock(
+        green_house=False,
+        black_body_temp=85,
+        mass_hydrogen=0.0,
+        mass_helium=0.0,
+        mass_nitrogen=0.0,
+        m_number=55,
+    )
+
+    expected = (
+        WorldClass.ONE,
+        WorldClass.TWO,
+        WorldClass.THREE,
+        WorldClass.FOUR,
+        WorldClass.FIVE,
+        WorldClass.SIX,
+    )
+    for n, world in enumerate(worlds):
+        world_class = calc_world_class(world)
+
+        assert world_class == expected[n], f"Case {n}"
