@@ -6,6 +6,7 @@ Purpose: Create worlds.
 """
 
 import argparse
+import re
 
 from world import (
     World,
@@ -23,6 +24,14 @@ from world import (
     calc_world_class,
     calc_albedo,
     calc_mass_carbon_dioxide,
+    calc_abio_vents,
+    calc_abio_surface,
+    calc_multicellular,
+    calc_photosynthesis,
+    calc_oxygen_cat,
+    calc_animals,
+    calc_presentients,
+    calc_mass_oxygen,
 )
 
 
@@ -50,6 +59,14 @@ def get_args():
         metavar="mass",
         type=float,
         default="1.0",
+    )
+
+    parser.add_argument(
+        "--spectral_type",
+        help="Spectral type of primary star",
+        metavar="str",
+        type=str,
+        default="G2",
     )
 
     parser.add_argument(
@@ -187,6 +204,10 @@ def get_args():
         if a < 0:
             parser.error(f'"{a}" should be zero or a positive float')
 
+    sp = args.spectral_type
+    if not re.match(r"[AGKM][0123456789]$|BD$", sp):
+        parser.error(f'"{sp}" should be valid spectral type')
+
     if args.type == "lone":
         args.type = WorldType.LONE
     elif args.type == "orbited":
@@ -206,6 +227,7 @@ def main():
         name=args.name,
         world_type=args.type,
         planet_mass=args.mass,
+        star_spectrum=args.spectral_type,
         star_mass=args.mass_star,
         star_distance=args.distance_star,
         satellite_mass=args.satellite_mass,
@@ -249,6 +271,29 @@ def main():
     world = world._replace(world_class=calc_world_class(world))
     world = world._replace(albedo=calc_albedo(world))
     world = world._replace(mass_carbon_dioxide=calc_mass_carbon_dioxide(world))
+    abio_vent, abio_vent_time = calc_abio_vents(world)
+    world = world._replace(
+        abio_vents_occurred=abio_vent, time_to_abio_vents=abio_vent_time
+    )
+    abio_surf, abio_surf_time = calc_abio_surface(world)
+    world = world._replace(
+        abio_surface_occurred=abio_surf, time_to_abio_surface=abio_surf_time
+    )
+    multi, multi_time = calc_multicellular(world)
+    world = world._replace(
+        multicellular_occured=multi, time_to_multicellular=multi_time
+    )
+    photo, photo_time = calc_photosynthesis(world)
+    world = world._replace(
+        photosynthesis_occurred=photo, time_to_photosynthesis=photo_time
+    )
+    oxy, oxy_time = calc_oxygen_cat(world)
+    world = world._replace(oxygen_occurred=oxy, time_to_oxygen=oxy_time)
+    anim, anim_time = calc_animals(world)
+    world = world._replace(animals_occurred=anim, time_to_animals=anim_time)
+    pre, pre_time = calc_presentients(world)
+    world = world._replace(presentients_occurred=pre, time_to_presentients=pre_time)
+    world = world._replace(mass_oxygen=calc_mass_oxygen(world))
     print(world.describe())
 
 

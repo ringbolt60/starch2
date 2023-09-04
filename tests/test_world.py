@@ -21,6 +21,14 @@ from starch.world import (
     calc_world_class,
     calc_albedo,
     calc_mass_carbon_dioxide,
+    calc_abio_vents,
+    calc_abio_surface,
+    calc_multicellular,
+    calc_photosynthesis,
+    calc_oxygen_cat,
+    calc_animals,
+    calc_presentients,
+    calc_mass_oxygen,
 )
 from starch.world import (
     Water,
@@ -732,3 +740,530 @@ def test_calc_ccs():
     )
     for n, world in enumerate(worlds):
         assert world.carbon_silicate_cycle is expected[n], f"Case {n}"
+
+
+def test_calc_abio_vents(mocker):
+    worlds = [mocker.Mock(World) for _ in range(7)]
+    worlds[0].configure_mock(
+        water_prevalence=Water.EXTENSIVE,
+        world_class=WorldClass.TWO,
+        lithosphere=Lithosphere.SOFT,
+        tectonics=Tectonics.MOBILE,
+        age=4.5,
+    )
+    worlds[1].configure_mock(
+        water_prevalence=Water.MODERATE,
+        world_class=WorldClass.TWO,
+        lithosphere=Lithosphere.SOFT,
+        tectonics=Tectonics.MOBILE,
+        age=4.5,
+    )
+    worlds[2].configure_mock(
+        water_prevalence=Water.EXTENSIVE,
+        world_class=WorldClass.ONE,
+        lithosphere=Lithosphere.SOFT,
+        tectonics=Tectonics.MOBILE,
+        age=4.5,
+    )
+    worlds[3].configure_mock(
+        water_prevalence=Water.EXTENSIVE,
+        world_class=WorldClass.TWO,
+        lithosphere=Lithosphere.SOFT,
+        tectonics=Tectonics.MOBILE,
+        age=0.2,
+    )
+    worlds[4].configure_mock(
+        water_prevalence=Water.EXTENSIVE,
+        world_class=WorldClass.TWO,
+        lithosphere=Lithosphere.SOLID,
+        tectonics=Tectonics.MOBILE,
+        age=4.5,
+    )
+    worlds[5].configure_mock(
+        water_prevalence=Water.EXTENSIVE,
+        world_class=WorldClass.TWO,
+        lithosphere=Lithosphere.SOFT,
+        tectonics=Tectonics.FIXED,
+        age=4.5,
+    )
+    worlds[6].configure_mock(
+        water_prevalence=Water.EXTENSIVE,
+        world_class=WorldClass.TWO,
+        lithosphere=Lithosphere.SOFT,
+        tectonics=Tectonics.NONE,
+        age=4.5,
+    )
+
+    randoms = (
+        Dice(mocks=[3, 4, 5]),
+        Dice(mocks=[3, 4, 3, 6, 6, 6]),
+        Dice(mocks=[1, 5, 5, 6, 1, 5, 4]),
+        Dice(mocks=[5, 6, 4, 5, 6, 6]),
+        Dice(mocks=[3, 3, 3]),
+        Dice(mocks=[2, 2, 1]),
+        Dice(mocks=[2, 5, 4]),
+    )
+
+    expected = (
+        (True, 360),
+        (True, 300),
+        (False, None),
+        (False, None),
+        (False, None),
+        (False, None),
+        (True, 330),
+    )
+
+    for n, world in enumerate(worlds):
+        present, time = calc_abio_vents(world, randoms[n])
+        exp_present, exp_time = expected[n]
+        assert present is exp_present, f"Case {n}"
+        assert time == exp_time, f"Case {n}"
+
+
+def test_calc_abio_surface():
+    worlds = [World() for _ in range(6)]
+    worlds[0] = worlds[0]._replace(
+        albedo=0.27,
+        luminosity=1.776,
+        mass_carbon_dioxide=5.3,
+        water_prevalence=Water.MODERATE,
+        lithosphere=Lithosphere.SOFT,
+        world_class=WorldClass.TWO,
+        abio_vents_occurred=True,
+        time_to_abio_vents=180,
+    )
+    worlds[1] = worlds[1]._replace(
+        albedo=0.27,
+        luminosity=1.776,
+        mass_carbon_dioxide=5.3,
+        water_prevalence=Water.MODERATE,
+        lithosphere=Lithosphere.EARLY_PLATE,
+        world_class=WorldClass.FOUR,
+        abio_vents_occurred=True,
+        time_to_abio_vents=30,
+    )
+    worlds[2] = worlds[2]._replace(
+        albedo=0.27,
+        luminosity=0.035889,
+        mass_carbon_dioxide=5.3,
+        water_prevalence=Water.MODERATE,
+        lithosphere=Lithosphere.SOFT,
+        world_class=WorldClass.TWO,
+    )
+    worlds[3] = worlds[3]._replace(
+        albedo=0.27,
+        luminosity=1.776,
+        mass_carbon_dioxide=5.3,
+        water_prevalence=Water.MODERATE,
+        lithosphere=Lithosphere.SOFT,
+        world_class=WorldClass.ONE,
+    )
+    worlds[4] = worlds[4]._replace(
+        albedo=0.27,
+        luminosity=1.776,
+        mass_carbon_dioxide=5.3,
+        water_prevalence=Water.MODERATE,
+        lithosphere=Lithosphere.SOFT,
+        world_class=WorldClass.THREE,
+    )
+    worlds[5] = worlds[5]._replace(
+        albedo=0.27,
+        luminosity=1.776,
+        mass_carbon_dioxide=5.3,
+        water_prevalence=Water.MODERATE,
+        lithosphere=Lithosphere.SOFT,
+        world_class=WorldClass.SIX,
+    )
+
+    expected = (
+        (True, 1200),
+        (True, 2250),
+        (False, None),
+        (False, None),
+        (False, None),
+        (False, None),
+    )
+
+    randoms = (
+        Dice(mocks=[3, 4, 5]),
+        Dice(mocks=[6, 5, 6, 6, 6, 6]),
+        Dice(mocks=[1, 5, 5, 6, 1, 5, 4]),
+        Dice(mocks=[5, 6, 4, 5, 6, 6]),
+        Dice(mocks=[3, 3, 3]),
+        Dice(mocks=[2, 2, 1]),
+    )
+
+    for n, world in enumerate(worlds):
+        present, time = calc_abio_surface(world, randoms[n])
+        exp_present, exp_time = expected[n]
+        assert present is exp_present, f"Case {n}"
+        assert time == exp_time, f"Case {n}"
+
+
+def test_calc_time_to_multicellular(mocker):
+    worlds = [mocker.Mock(World) for _ in range(6)]
+    worlds[0].configure_mock(
+        abio_vents_occurred=True,
+        time_to_abio_vents=30,
+        abio_surface_occurred=True,
+        time_to_abio_surface=3000,
+        age=4.5,
+    )
+    worlds[1].configure_mock(
+        abio_vents_occurred=True,
+        time_to_abio_vents=2020,
+        abio_surface_occurred=True,
+        time_to_abio_surface=2000,
+        age=4.5,
+    )
+    worlds[2].configure_mock(
+        abio_vents_occurred=False,
+        time_to_abio_vents=None,
+        abio_surface_occurred=True,
+        time_to_abio_surface=2000,
+        age=4.5,
+    )
+    worlds[3].configure_mock(
+        abio_vents_occurred=True,
+        time_to_abio_vents=180,
+        abio_surface_occurred=False,
+        time_to_abio_surface=None,
+        age=4.5,
+    )
+    worlds[4].configure_mock(
+        abio_vents_occurred=False,
+        time_to_abio_vents=None,
+        abio_surface_occurred=False,
+        time_to_abio_surface=None,
+        age=4.5,
+    )
+    worlds[5].configure_mock(
+        abio_vents_occurred=True,
+        time_to_abio_vents=2020,
+        abio_surface_occurred=True,
+        time_to_abio_surface=2000,
+        age=2.1,
+    )
+
+    randoms = (
+        Dice(mocks=[3, 4, 5]),
+        Dice(mocks=[3, 4, 3, 6, 6, 6]),
+        Dice(mocks=[1, 5, 5, 6, 1, 5, 4]),
+        Dice(mocks=[5, 6, 4, 5, 6, 6]),
+        Dice(mocks=[3, 3, 3]),
+        Dice(mocks=[3, 3, 3]),
+    )
+
+    expected = (
+        (True, 930),
+        (True, 2750),
+        (True, 2825),
+        (True, 1305),
+        (False, None),
+        (False, None),
+    )
+
+    for n, world in enumerate(worlds):
+        present, time = calc_multicellular(world, randoms[n])
+        exp_present, exp_time = expected[n]
+        assert present is exp_present, f"Case {n}"
+        assert time == exp_time, f"Case {n}"
+
+
+def test_calc_photosynthesis(mocker):
+    worlds = [World() for _ in range(6)]
+    worlds[0] = worlds[0]._replace(
+        abio_surface_occurred=True,
+        time_to_abio_surface=3000,
+        star_spectrum="G2",
+        age=4.5,
+    )
+    worlds[1] = worlds[1]._replace(
+        abio_surface_occurred=True,
+        time_to_abio_surface=2000,
+        star_spectrum="G8",
+        age=4.5,
+    )
+    worlds[2] = worlds[2]._replace(
+        abio_surface_occurred=True,
+        time_to_abio_surface=1000,
+        star_spectrum="K5",
+        age=4.5,
+    )
+    worlds[3] = worlds[3]._replace(
+        abio_surface_occurred=False,
+        time_to_abio_surface=None,
+        star_spectrum="G2",
+        age=4.5,
+    )
+    worlds[4] = worlds[4]._replace(
+        abio_surface_occurred=True,
+        time_to_abio_surface=None,
+        star_spectrum="BD",
+        age=4.5,
+    )
+    worlds[5] = worlds[5]._replace(
+        abio_surface_occurred=True,
+        time_to_abio_surface=2000,
+        star_spectrum="G2",
+        age=1.9,
+    )
+
+    randoms = (
+        Dice(mocks=[3, 4, 5]),
+        Dice(mocks=[3, 4, 3, 6, 6, 6]),
+        Dice(mocks=[1, 5, 5, 6, 1, 5, 4]),
+        Dice(mocks=[5, 6, 4, 5, 6, 6]),
+        Dice(mocks=[3, 3, 3]),
+        Dice(mocks=[3, 3, 3]),
+    )
+
+    expected = (
+        (True, 4200),
+        (True, 3050),
+        (True, 2760),
+        (False, None),
+        (False, None),
+        (False, None),
+    )
+
+    for n, world in enumerate(worlds):
+        present, time = calc_photosynthesis(world, randoms[n])
+        exp_present, exp_time = expected[n]
+        assert present is exp_present, f"Case {n}"
+        assert time == exp_time, f"Case {n}"
+
+
+def test_calc_oxygen_present(mocker):
+    worlds = [World() for _ in range(6)]
+    worlds[0] = worlds[0]._replace(
+        photosynthesis_occurred=True,
+        time_to_photosynthesis=2000,
+        star_spectrum="G2",
+        age=4.5,
+    )
+    worlds[1] = worlds[1]._replace(
+        photosynthesis_occurred=True,
+        time_to_photosynthesis=3000,
+        star_spectrum="G8",
+        age=4.8,
+    )
+    worlds[2] = worlds[2]._replace(
+        photosynthesis_occurred=True,
+        time_to_photosynthesis=3000,
+        star_spectrum="K5",
+        age=6.5,
+    )
+    worlds[3] = worlds[3]._replace(
+        photosynthesis_occurred=False,
+        time_to_photosynthesis=3000,
+        star_spectrum="G2",
+        age=4.8,
+    )
+    worlds[4] = worlds[4]._replace(
+        photosynthesis_occurred=True,
+        time_to_photosynthesis=2000,
+        star_spectrum="M2",
+        age=7.0,
+    )
+    worlds[5] = worlds[5]._replace(
+        photosynthesis_occurred=True,
+        time_to_photosynthesis=3000,
+        star_spectrum="G2",
+        age=1.9,
+    )
+
+    randoms = (
+        Dice(mocks=[3, 4, 5]),
+        Dice(mocks=[3, 4, 3, 6, 6, 6]),
+        Dice(mocks=[1, 5, 5, 6, 1, 5, 4]),
+        Dice(mocks=[5, 6, 4, 5, 6, 6]),
+        Dice(mocks=[3, 3, 3]),
+        Dice(mocks=[3, 3, 3]),
+    )
+
+    expected = (
+        (True, 3800),
+        (True, 4575),
+        (True, 5640),
+        (False, None),
+        (True, 6050),
+        (False, None),
+    )
+
+    for n, world in enumerate(worlds):
+        present, time = calc_oxygen_cat(world, randoms[n])
+        exp_present, exp_time = expected[n]
+        assert present is exp_present, f"Case {n}"
+        assert time == exp_time, f"Case {n}"
+
+
+def test_calc_animals(mocker):
+    worlds = [World() for _ in range(6)]
+    worlds[0] = worlds[0]._replace(
+        multicellular_occured=True,
+        time_to_multicellular=2000,
+        time_to_oxygen=3100,
+        oxygen_occurred=True,
+        age=4.5,
+    )
+    worlds[1] = worlds[1]._replace(
+        multicellular_occured=True,
+        time_to_multicellular=2000,
+        time_to_oxygen=3100,
+        oxygen_occurred=True,
+        age=3.25,
+    )
+    worlds[2] = worlds[2]._replace(
+        multicellular_occured=True,
+        time_to_multicellular=700,
+        time_to_oxygen=6100,
+        oxygen_occurred=True,
+        age=4.5,
+    )
+    worlds[3] = worlds[3]._replace(
+        multicellular_occured=True,
+        time_to_multicellular=700,
+        time_to_oxygen=6100,
+        oxygen_occurred=True,
+        age=4.5,
+    )
+    worlds[4] = worlds[4]._replace(
+        multicellular_occured=True,
+        time_to_multicellular=700,
+        time_to_oxygen=None,
+        oxygen_occurred=False,
+        age=4.5,
+    )
+    worlds[5] = worlds[5]._replace(
+        multicellular_occured=True,
+        time_to_multicellular=700,
+        time_to_oxygen=6100,
+        oxygen_occurred=True,
+        age=1.5,
+    )
+
+    randoms = (
+        Dice(mocks=[3, 4, 5]),
+        Dice(mocks=[3, 4, 3, 6, 6, 6]),
+        Dice(mocks=[1, 5, 5, 6, 1, 5, 4]),
+        Dice(mocks=[5, 6, 4, 5, 6, 6]),
+        Dice(mocks=[3, 3, 3]),
+        Dice(mocks=[3, 3, 3]),
+    )
+
+    expected = (
+        (True, 4350),
+        (False, None),
+        (True, 4000),
+        (False, None),
+        (True, 3400),
+        (False, None),
+    )
+
+    for n, world in enumerate(worlds):
+        present, time = calc_animals(world, randoms[n])
+        exp_present, exp_time = expected[n]
+        assert present is exp_present, f"Case {n}"
+        assert time == exp_time, f"Case {n}"
+
+
+def test_calc_presentient(mocker):
+    worlds = [World() for _ in range(6)]
+    worlds[0] = worlds[0]._replace(
+        animals_occurred=True,
+        time_to_animals=4300,
+        water_prevalence=Water.EXTENSIVE,
+        age=5.5,
+    )
+    worlds[1] = worlds[1]._replace(
+        animals_occurred=True,
+        time_to_animals=4300,
+        water_prevalence=Water.EXTENSIVE,
+        age=4.0,
+    )
+    worlds[2] = worlds[2]._replace(
+        animals_occurred=True,
+        time_to_animals=4300,
+        water_prevalence=Water.MASSIVE,
+        age=6.2,
+    )
+    worlds[3] = worlds[3]._replace(
+        animals_occurred=True,
+        time_to_animals=4300,
+        water_prevalence=Water.MASSIVE,
+        age=3.2,
+    )
+    worlds[4] = worlds[4]._replace(
+        animals_occurred=True,
+        time_to_animals=3300,
+        water_prevalence=Water.MODERATE,
+        age=4.3,
+    )
+    worlds[5] = worlds[5]._replace(
+        animals_occurred=False,
+        time_to_animals=3300,
+        water_prevalence=Water.MODERATE,
+        age=4.3,
+    )
+
+    randoms = (
+        Dice(mocks=[3, 4, 5]),
+        Dice(mocks=[3, 4, 3, 6, 6, 6]),
+        Dice(mocks=[1, 5, 5, 6, 1, 5, 4]),
+        Dice(mocks=[5, 6, 4, 5, 6, 6]),
+        Dice(mocks=[3, 3, 3]),
+        Dice(mocks=[3, 3, 3]),
+    )
+
+    expected = (
+        (True, 4900),
+        (False, None),
+        (True, 5400),
+        (False, None),
+        (True, 3750),
+        (False, None),
+    )
+
+    for n, world in enumerate(worlds):
+        present, time = calc_presentients(world, randoms[n])
+        exp_present, exp_time = expected[n]
+        assert present is exp_present, f"Case {n}"
+        assert time == exp_time, f"Case {n}"
+
+
+def test_calc_mass_oxygen(mocker):
+    worlds = [mocker.Mock(World) for _ in range(4)]
+    worlds[0].configure_mock(
+        arf=2.7, photosynthesis_occurred=True, oxygen_occurred=False
+    )
+    worlds[1].configure_mock(
+        arf=1.7,
+        photosynthesis_occurred=False,
+        oxygen_occurred=False,
+    )
+    worlds[2].configure_mock(
+        arf=2.4,
+        photosynthesis_occurred=True,
+        oxygen_ocurred=True,
+    )
+    worlds[3].configure_mock(
+        arf=1.7,
+        photosynthesis_occurred=True,
+        oxygen_ocurred=True,
+    )
+    randoms = (
+        Dice(mocks=[3, 4, 5]),
+        Dice(mocks=[3, 4, 3, 6, 6, 6]),
+        Dice(mocks=[1, 5, 5, 6, 1, 5, 4]),
+        Dice(mocks=[5, 6, 4, 5, 6, 6]),
+    )
+    expected = (
+        0.024,
+        0.0,
+        0.624,
+        0.51,
+    )
+    for n, world in enumerate(worlds):
+        assert calc_mass_oxygen(world, randoms[n]) == expected[n], f"Case {n}"

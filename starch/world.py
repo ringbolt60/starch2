@@ -8,6 +8,7 @@ Purpose: Create worlds.
 # import argparse
 import math
 import random
+import re
 from enum import Enum
 from typing import NamedTuple
 
@@ -105,6 +106,7 @@ class World(NamedTuple):
     name: str = "DEFAULT"
     world_type: WorldType = WorldType.ORBITED
     planet_mass: float = 1.0
+    star_spectrum: str = "G2"
     star_mass: float = 1.0
     star_distance: float = 1.0
     satellite_mass: float = 0.0123
@@ -136,8 +138,23 @@ class World(NamedTuple):
     mass_helium: float = 0.0
     mass_nitrogen: float = 0.0
     mass_carbon_dioxide: float = 0.0
+    mass_oxygen: float = 0.0
     world_class: WorldClass = WorldClass.SIX
     albedo: float = 0.1
+    abio_vents_occurred: bool = False
+    time_to_abio_vents: int | None = None
+    abio_surface_occurred: bool = False
+    time_to_abio_surface: int | None = None
+    multicellular_occured: bool = False
+    time_to_multicellular: int | None = None
+    photosynthesis_occurred: bool = False
+    time_to_photosynthesis: int | None = None
+    oxygen_occurred: bool = False
+    time_to_oxygen: int | None = None
+    animals_occurred: bool = False
+    time_to_animals: int | None = None
+    presentients_occurred: bool = False
+    time_to_presentients: int | None = None
 
     @property
     def radius(self):
@@ -233,6 +250,28 @@ class World(NamedTuple):
         else:
             return False
 
+    @property
+    def life(self) -> str:
+        if self.photosynthesis_occurred:
+            return "Aerobic Life"
+        if self.abio_surface_occurred or self.abio_vents_occurred:
+            return "Anaerobic life"
+        else:
+            return "Lifeless"
+
+    @property
+    def photosynthesis_time_scale(self):
+        mult = 100
+        if re.match(r"G[89]", self.star_spectrum):
+            mult = 105
+        if self.star_spectrum[0] == "M":
+            mult = 300
+        if self.star_spectrum[0] == "K":
+            lookup = (110, 115, 120, 130, 145, 160, 180, 210, 240, 240)
+            x = int(self.star_spectrum[1])
+            mult = lookup[x]
+        return mult
+
     def describe(self):
         text = [self.name, f"{self.world_type.value} Age: {self.age:.3f} GYr"]
         if self.world_type == WorldType.SATELLITE:
@@ -282,10 +321,17 @@ class World(NamedTuple):
         )
         text.append(f"{self.magnetic_field.value}")
         text.append(
-            f"{self.world_class.value}{' CS Cycle present' if self.carbon_silicate_cycle else ''} ARF: {self.arf} H2: {self.mass_hydrogen:.2f} He: {self.mass_helium:.2f} N2: {self.mass_nitrogen:.2f} CO2: {self.mass_carbon_dioxide:.2f}"
+            f"{self.world_class.value}{' CS Cycle present' if self.carbon_silicate_cycle else ''} ARF: {self.arf} H2: "
+            f"{self.mass_hydrogen:.2f} He: {self.mass_helium:.2f} "
+            f"N2: {self.mass_nitrogen:.2f} CO2: {self.mass_carbon_dioxide:.2f} "
+            f"O2: {self.mass_oxygen:.2f}"
         )
-
         text.append(f"Albedo: {self.albedo:.2f}")
+        text.append(
+            f"{self.life} [{'Deep sea vents' if self.abio_vents_occurred else ''}{' Surface refugia' if self.abio_surface_occurred else ''}"
+            f"{' / Multicellular' if self.multicellular_occured else ''}{' / Photosynthetic' if self.photosynthesis_occurred else ''}"
+            f"{' / Oxygen Catastrophe' if self.oxygen_occurred else ''}{' / Animals' if self.animals_occurred else ''}{' / Pre-sentients' if self.presentients_occurred else ''}]"
+        )
         return "\n".join(text)
 
 
@@ -707,3 +753,137 @@ def calc_mass_carbon_dioxide(w: World) -> float:
         else:
             mass = 0
     return random.uniform(mass * 0.9, mass * 1.1)
+
+
+# --------------------------------------------------
+def calc_abio_vents(w: World, rand: Dice = Dice()) -> (bool, int | None):
+    if w.world_class == WorldClass.ONE:
+        return False, None
+    if w.water_prevalence in (Water.TRACE, Water.MINIMAL):
+        return False, None
+    if w.lithosphere in (Lithosphere.MOLTEN, Lithosphere.SOLID):
+        return False, None
+    if w.tectonics == Tectonics.FIXED:
+        return False, None
+    time = 30 * sum(rand.next() for _ in range(3))
+    if w.age > time / 1000:
+        return True, time
+    else:
+        return False, None
+
+
+# --------------------------------------------------
+def calc_abio_surface(w: World, rand: Dice = Dice()) -> (bool, int | None):
+    if w.world_class in (
+        WorldClass.ONE,
+        WorldClass.THREE,
+        WorldClass.FIVE,
+        WorldClass.SIX,
+    ):
+        return False, None
+    if not w.carbon_silicate_cycle:
+        return False, None
+    if w.lithosphere in (Lithosphere.MOLTEN, Lithosphere.SOLID):
+        return False, None
+
+    if w.lithosphere == Lithosphere.SOFT or w.tectonics == Tectonics.MOBILE:
+        time_mult = 100
+    else:
+        time_mult = 200
+    time = time_mult * sum(rand.next() for _ in range(3))
+    if w.abio_vents_occurred:
+        time = min(time, w.time_to_abio_vents * 75)
+
+    if w.age > time / 1000:
+        return True, time
+    else:
+        return False, None
+
+
+# --------------------------------------------------
+def calc_multicellular(w: World, rand: Dice = Dice()) -> (bool, int | None):
+    if w.abio_vents_occurred is False and w.abio_surface_occurred is False:
+        return False, None
+
+    time = 75 * sum(rand.next() for _ in range(3))
+    if w.abio_vents_occurred is True:
+        ttav = w.time_to_abio_vents
+    else:
+        ttav = 50000
+    if w.abio_surface_occurred is True:
+        ttas = w.time_to_abio_surface
+    else:
+        ttas = 50000
+    time += min(ttav, ttas)
+
+    if w.age > time / 1000:
+        return True, time
+    else:
+        return False, None
+
+
+def calc_photosynthesis(w: World, rand: Dice = Dice()) -> (bool, int | None):
+    if w.abio_surface_occurred is False or w.star_spectrum == "BD":
+        return False, None
+
+    time = sum(rand.next() for _ in range(3)) * w.photosynthesis_time_scale
+    time += w.time_to_abio_surface
+
+    if w.age > time / 1000:
+        return True, time
+    else:
+        return False, None
+
+
+def calc_oxygen_cat(w: World, rand: Dice = Dice()) -> (bool, int | None):
+    if w.photosynthesis_occurred is False:
+        return False, None
+
+    time = sum(rand.next() for _ in range(3)) * w.photosynthesis_time_scale * 1.5
+    time += w.time_to_photosynthesis
+
+    if w.age > time / 1000:
+        return True, time
+    else:
+        return False, None
+
+
+def calc_animals(w: World, rand: Dice = Dice()) -> (bool, int | None):
+    if w.multicellular_occured is False:
+        return False, None
+
+    time = 300 * sum(rand.next() for _ in range(3))
+    time += w.time_to_multicellular
+    if w.oxygen_occurred and time > w.time_to_oxygen:
+        time -= (time - w.time_to_oxygen) / 2
+
+    if w.age > time / 1000:
+        return True, time
+    else:
+        return False, None
+
+
+def calc_presentients(w: World, rand: Dice = Dice()) -> (bool, int | None):
+    if w.animals_occurred is False:
+        return False, None
+    mult = 50
+    if w.water_prevalence == Water.MASSIVE:
+        mult = 100
+    time = mult * sum(rand.next() for _ in range(3))
+    time += w.time_to_animals
+
+    if w.age > time / 1000:
+        return True, time
+    else:
+        return False, None
+
+
+# --------------------------------------------------
+def calc_mass_oxygen(w: World, rand: Dice = Dice()) -> float:
+    if w.photosynthesis_occurred is False and w.oxygen_occurred is False:
+        return 0.0
+    roll = sum(rand.next() for _ in range(3))
+    if w.oxygen_occurred:
+        roll += 15
+        return w.arf * roll / 100
+    return roll * 0.002

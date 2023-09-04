@@ -72,6 +72,15 @@ def test_bad_numeric_inputs():
 
 
 # --------------------------------------------------
+def test_bad_star_spectral_type():
+    bads = ("jjaksfdh", "G123", "0")
+    for bad in bads:
+        rv, out = getstatusoutput(f"{PRG} NovaTerra lone --spectral_type {bad}")
+        assert rv != 0
+        assert re.search(f'"{bad}" should be valid spectral type', out)
+
+
+# --------------------------------------------------
 def test_orbited_default_case():
     """Reject incorrect output for orbited case when using default values"""
 

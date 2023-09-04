@@ -96,6 +96,8 @@ optional arguments:
   -h, --help            show this help message and exit
   -m float, --mass float
                         Mass of primary in Earth masses (default: 1.0)
+  --spectral_type str
+                        Spectral type of primary star (default: G2)
   -M float, --mass_star float
                         Mass of star in Sol masses (default: 1.0)
   -D float, --distance_star float
