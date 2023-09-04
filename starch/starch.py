@@ -21,6 +21,7 @@ from world import (
     calc_mass_helium,
     calc_mass_nitrogen,
     calc_world_class,
+    calc_albedo,
 )
 
 
@@ -245,6 +246,7 @@ def main():
     world = world._replace(mass_helium=calc_mass_helium(world))
     world = world._replace(mass_nitrogen=calc_mass_nitrogen(world))
     world = world._replace(world_class=calc_world_class(world))
+    world = world._replace(albedo=calc_albedo(world))
     print(world.describe())
 
 

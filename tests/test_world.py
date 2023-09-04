@@ -19,6 +19,7 @@ from starch.world import (
     calc_mass_nitrogen,
     WorldClass,
     calc_world_class,
+    calc_albedo,
 )
 from starch.world import (
     Water,
@@ -537,3 +538,110 @@ def test_calc_world_class(mocker):
         world_class = calc_world_class(world)
 
         assert world_class == expected[n], f"Case {n}"
+
+
+def test_calc_albedo(mocker):
+    worlds = [mocker.Mock(World) for _ in range(12)]
+    worlds[0].configure_mock(
+        black_body_temp=342,
+        world_class=WorldClass.ONE,
+        water_prevalence=Water.TRACE,
+        lithosphere=Lithosphere.ANCIENT_PLATE,
+        tectonics=Tectonics.FIXED,
+    )
+    worlds[1].configure_mock(
+        black_body_temp=342,
+        world_class=WorldClass.TWO,
+        water_prevalence=Water.TRACE,
+        lithosphere=Lithosphere.ANCIENT_PLATE,
+        tectonics=Tectonics.FIXED,
+    )
+    worlds[2].configure_mock(
+        black_body_temp=342,
+        world_class=WorldClass.THREE,
+        water_prevalence=Water.TRACE,
+        lithosphere=Lithosphere.ANCIENT_PLATE,
+        tectonics=Tectonics.FIXED,
+    )
+    worlds[3].configure_mock(
+        black_body_temp=342,
+        world_class=WorldClass.FOUR,
+        water_prevalence=Water.TRACE,
+        lithosphere=Lithosphere.ANCIENT_PLATE,
+        tectonics=Tectonics.FIXED,
+    )
+    worlds[4].configure_mock(
+        black_body_temp=342,
+        world_class=WorldClass.FOUR,
+        water_prevalence=Water.MASSIVE,
+        lithosphere=Lithosphere.ANCIENT_PLATE,
+        tectonics=Tectonics.FIXED,
+    )
+    worlds[5].configure_mock(
+        black_body_temp=342,
+        world_class=WorldClass.FIVE,
+        water_prevalence=Water.MINIMAL,
+        lithosphere=Lithosphere.ANCIENT_PLATE,
+        tectonics=Tectonics.FIXED,
+    )
+    worlds[6].configure_mock(
+        black_body_temp=342,
+        world_class=WorldClass.FIVE,
+        water_prevalence=Water.MODERATE,
+        lithosphere=Lithosphere.ANCIENT_PLATE,
+        tectonics=Tectonics.FIXED,
+    )
+    worlds[7].configure_mock(
+        black_body_temp=342,
+        world_class=WorldClass.FIVE,
+        water_prevalence=Water.EXTENSIVE,
+        lithosphere=Lithosphere.ANCIENT_PLATE,
+        tectonics=Tectonics.FIXED,
+    )
+    worlds[8].configure_mock(
+        black_body_temp=342,
+        world_class=WorldClass.SIX,
+        water_prevalence=Water.EXTENSIVE,
+        lithosphere=Lithosphere.ANCIENT_PLATE,
+        tectonics=Tectonics.FIXED,
+    )
+    worlds[9].configure_mock(
+        black_body_temp=342,
+        world_class=WorldClass.SIX,
+        water_prevalence=Water.MINIMAL,
+        lithosphere=Lithosphere.SOLID,
+        tectonics=Tectonics.FIXED,
+    )
+    worlds[10].configure_mock(
+        black_body_temp=342,
+        world_class=WorldClass.SIX,
+        water_prevalence=Water.MODERATE,
+        lithosphere=Lithosphere.EARLY_PLATE,
+        tectonics=Tectonics.FIXED,
+    )
+    worlds[11].configure_mock(
+        black_body_temp=70,
+        world_class=WorldClass.SIX,
+        water_prevalence=Water.MASSIVE,
+        lithosphere=Lithosphere.SOLID,
+        tectonics=Tectonics.NONE,
+    )
+    randoms = (
+        Dice(mocks=[3, 4, 5]),
+        Dice(mocks=[3, 4, 3, 6, 6, 6]),
+        Dice(mocks=[1, 5, 5, 6, 1, 5, 4]),
+        Dice(mocks=[5, 6, 4, 5, 6, 6]),
+        Dice(mocks=[3, 3, 3]),
+        Dice(mocks=[2, 2, 1]),
+        Dice(mocks=[2, 5, 4]),
+        Dice(mocks=[3, 3, 3]),
+        Dice(mocks=[2, 5, 4]),
+        Dice(mocks=[2, 2, 1]),
+        Dice(mocks=[2, 5, 4]),
+        Dice(mocks=[3, 3, 3]),
+    )
+    expected = (0.77, 0.3, 0.21, 0.3, 0.34, 0.21, 0.3, 0.31, 0.55, 0.07, 0.49, 0.59)
+    for n, world in enumerate(worlds):
+        albedo = calc_albedo(world, randoms[n])
+
+        assert albedo == pytest.approx(expected[n]), f"Case {n}"

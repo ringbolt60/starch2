@@ -136,6 +136,7 @@ class World(NamedTuple):
     mass_helium: float = 0.0
     mass_nitrogen: float = 0.0
     world_class: WorldClass = WorldClass.SIX
+    albedo: float = 0.1
 
     @property
     def radius(self):
@@ -267,7 +268,7 @@ class World(NamedTuple):
         text.append(
             f"{self.world_class.value} ARF: {self.arf} H2: {self.mass_hydrogen:.2f} He: {self.mass_helium:.2f} N2: {self.mass_nitrogen:.2f}"
         )
-
+        text.append(f"Albedo: {self.albedo:.2f}")
         return "\n".join(text)
 
 
@@ -629,3 +630,49 @@ def calc_world_class(w: World) -> WorldClass:
     ):
         return WorldClass.FIVE
     return WorldClass.SIX
+
+
+# --------------------------------------------------
+def calc_albedo(w: World, rand: Dice = Dice()) -> float:
+    roll = sum(rand.next() for _ in range(3)) / 100
+    if w.world_class == WorldClass.ONE:
+        return 0.65 + roll
+    if w.world_class == WorldClass.TWO:
+        return 0.2 + roll
+    if w.world_class == WorldClass.THREE:
+        return 0.1 + roll
+    if w.world_class in (WorldClass.FOUR, WorldClass.FIVE):
+        lookup = {
+            Water.TRACE: 0.15,
+            Water.MINIMAL: 0.16,
+            Water.MODERATE: 0.19,
+            Water.EXTENSIVE: 0.22,
+            Water.MASSIVE: 0.25,
+        }
+        return lookup[w.water_prevalence] + roll
+    if w.world_class == WorldClass.SIX:
+        lookup = {
+            Water.TRACE: 0.01,
+            Water.MINIMAL: 0.02,
+            Water.MODERATE: 0.08,
+            Water.EXTENSIVE: 0.14,
+            Water.MASSIVE: 0.20,
+        }
+        a = lookup[w.water_prevalence] + roll
+        if w.lithosphere in (Lithosphere.SOFT, Lithosphere.MOLTEN):
+            a += 0.5
+        if w.lithosphere in (Lithosphere.EARLY_PLATE, Lithosphere.MATURE_PLATE):
+            a += 0.3
+        if (
+            w.lithosphere == Lithosphere.ANCIENT_PLATE
+            and w.tectonics == Tectonics.MOBILE
+        ):
+            a += 0.3
+        if (
+            w.lithosphere == Lithosphere.ANCIENT_PLATE
+            and w.tectonics == Tectonics.FIXED
+        ):
+            a += 0.3
+        if w.lithosphere == Lithosphere.SOLID and w.black_body_temp < 80:
+            a += 0.3
+        return a
