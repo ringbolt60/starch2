@@ -135,6 +135,7 @@ class World(NamedTuple):
     mass_hydrogen: float = 0.0
     mass_helium: float = 0.0
     mass_nitrogen: float = 0.0
+    mass_carbon_dioxide: float = 0.0
     world_class: WorldClass = WorldClass.SIX
     albedo: float = 0.1
 
@@ -217,6 +218,21 @@ class World(NamedTuple):
         )
         return math.pow(mass * math.pow(self.density, 2), 1.0 / 3.0)
 
+    @property
+    def carbon_silicate_cycle(self) -> bool:
+        if self.mass_carbon_dioxide > 0:
+            t_ccs = (
+                self.black_body_temp * math.pow((1 - self.albedo), 0.25)
+                + 8 * math.log10(self.mass_carbon_dioxide)
+                + 36.0
+            )
+        else:
+            t_ccs = 0
+        if self.water_prevalence in (Water.MODERATE, Water.EXTENSIVE) and t_ccs >= 260:
+            return True
+        else:
+            return False
+
     def describe(self):
         text = [self.name, f"{self.world_type.value} Age: {self.age:.3f} GYr"]
         if self.world_type == WorldType.SATELLITE:
@@ -266,8 +282,9 @@ class World(NamedTuple):
         )
         text.append(f"{self.magnetic_field.value}")
         text.append(
-            f"{self.world_class.value} ARF: {self.arf} H2: {self.mass_hydrogen:.2f} He: {self.mass_helium:.2f} N2: {self.mass_nitrogen:.2f}"
+            f"{self.world_class.value}{' CS Cycle present' if self.carbon_silicate_cycle else ''} ARF: {self.arf} H2: {self.mass_hydrogen:.2f} He: {self.mass_helium:.2f} N2: {self.mass_nitrogen:.2f} CO2: {self.mass_carbon_dioxide:.2f}"
         )
+
         text.append(f"Albedo: {self.albedo:.2f}")
         return "\n".join(text)
 
@@ -676,3 +693,17 @@ def calc_albedo(w: World, rand: Dice = Dice()) -> float:
         if w.lithosphere == Lithosphere.SOLID and w.black_body_temp < 80:
             a += 0.3
         return a
+
+
+# --------------------------------------------------
+def calc_mass_carbon_dioxide(w: World) -> float:
+    if w.world_class is WorldClass.ONE:
+        mass = 100 * w.arf
+    elif w.world_class is WorldClass.SIX:
+        mass = 0
+    else:
+        if w.m_number <= 44 and w.black_body_temp >= 195:
+            mass = 10 * w.arf
+        else:
+            mass = 0
+    return random.uniform(mass * 0.9, mass * 1.1)

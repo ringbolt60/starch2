@@ -20,6 +20,7 @@ from starch.world import (
     WorldClass,
     calc_world_class,
     calc_albedo,
+    calc_mass_carbon_dioxide,
 )
 from starch.world import (
     Water,
@@ -645,3 +646,89 @@ def test_calc_albedo(mocker):
         albedo = calc_albedo(world, randoms[n])
 
         assert albedo == pytest.approx(expected[n]), f"Case {n}"
+
+
+def test_calc_mass_carbon_dioxide(mocker):
+    worlds = [mocker.Mock(World) for _ in range(6)]
+    worlds[0].configure_mock(
+        arf=2.7, m_number=7, black_body_temp=167, world_class=WorldClass.ONE
+    )
+    worlds[1].configure_mock(
+        arf=1.7, m_number=7, black_body_temp=200, world_class=WorldClass.TWO
+    )
+    worlds[2].configure_mock(
+        arf=2.7, m_number=7, black_body_temp=167, world_class=WorldClass.THREE
+    )
+    worlds[3].configure_mock(
+        arf=2.7, m_number=55, black_body_temp=254, world_class=WorldClass.FOUR
+    )
+    worlds[4].configure_mock(
+        arf=0.5, m_number=42, black_body_temp=254, world_class=WorldClass.FIVE
+    )
+    worlds[5].configure_mock(
+        arf=2.4, m_number=7, black_body_temp=200, world_class=WorldClass.SIX
+    )
+
+    expected = (
+        (243.0, 297.0),
+        (15.3, 18.7),
+        (0.0, 0.0),
+        (0.0, 0.0),
+        (4.5, 5.5),
+        (0.0, 0.0),
+    )
+    for n, world in enumerate(worlds):
+        field = calc_mass_carbon_dioxide(world)
+        lower, upper = expected[n]
+        assert lower <= field <= upper, f"Case {n}"
+
+
+def test_calc_ccs():
+    worlds = [World() for _ in range(6)]
+    worlds[0] = worlds[0]._replace(
+        albedo=0.27,
+        luminosity=1.776,
+        mass_carbon_dioxide=5.3,
+        water_prevalence=Water.MODERATE,
+    )
+    worlds[1] = worlds[1]._replace(
+        albedo=0.27,
+        luminosity=1.776,
+        mass_carbon_dioxide=5.3,
+        water_prevalence=Water.EXTENSIVE,
+    )
+    worlds[2] = worlds[2]._replace(
+        albedo=0.27,
+        luminosity=0.035889,
+        mass_carbon_dioxide=5.3,
+        water_prevalence=Water.EXTENSIVE,
+    )
+    worlds[3] = worlds[3]._replace(
+        albedo=0.27,
+        luminosity=1.776,
+        mass_carbon_dioxide=5.3,
+        water_prevalence=Water.MASSIVE,
+    )
+    worlds[4] = worlds[4]._replace(
+        albedo=0.27,
+        luminosity=1.776,
+        mass_carbon_dioxide=5.3,
+        water_prevalence=Water.TRACE,
+    )
+    worlds[5] = worlds[5]._replace(
+        albedo=0.27,
+        luminosity=1.776,
+        mass_carbon_dioxide=0.0,
+        water_prevalence=Water.EXTENSIVE,
+    )
+
+    expected = (
+        True,
+        True,
+        False,
+        False,
+        False,
+        False,
+    )
+    for n, world in enumerate(worlds):
+        assert world.carbon_silicate_cycle is expected[n], f"Case {n}"
