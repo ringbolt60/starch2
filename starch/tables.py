@@ -128,3 +128,33 @@ lithosphere_stressed = [
     (20000, ("soft", 2)),
     (20001, ("molten", 1)),
 ]
+
+
+# Determine greenhouse effect and mass of water vapour in atmosphere
+# Look up from t2
+# result is greenhouse effect for moderate water amounts
+water_vapour = [
+    (259, 0),
+    (260, 16),
+    (262, 17),
+    (265, 18),
+    (268, 19),
+    (270, 20),
+    (273, 21),
+    (276, 22),
+    (279, 23),
+    (282, 24),
+    (286, 25),
+    (289, 26),
+    (293, 27),
+    (296, 28),
+    (300, 29),
+    (304, 30),
+    (309, 31),
+    (313, 32),
+    (318, 33),
+    (323, 34),
+    (328, 35),
+    (333, 36),
+    (100000, 37),
+]

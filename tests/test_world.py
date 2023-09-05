@@ -29,6 +29,9 @@ from starch.world import (
     calc_animals,
     calc_presentients,
     calc_mass_oxygen,
+    calc_surface_temp_1,
+    adjust_carbon_dioxide,
+    calc_water_vapour,
 )
 from starch.world import (
     Water,
@@ -1267,3 +1270,155 @@ def test_calc_mass_oxygen(mocker):
     )
     for n, world in enumerate(worlds):
         assert calc_mass_oxygen(world, randoms[n]) == expected[n], f"Case {n}"
+
+
+def test_calc_surface_temp():
+    worlds = [World() for _ in range(6)]
+    worlds[0] = worlds[0]._replace(
+        world_class=WorldClass.ONE,
+        mass_carbon_dioxide=65.3,
+        albedo=0.75,
+    )
+    worlds[1] = worlds[1]._replace(
+        world_class=WorldClass.SIX,
+        albedo=0.3,
+    )
+    worlds[2] = worlds[2]._replace(
+        world_class=WorldClass.TWO,
+        arf=0.0,
+        albedo=0.25,
+    )
+    worlds[3] = worlds[3]._replace(
+        world_class=WorldClass.FOUR,
+        abio_vents_occurred=True,
+        arf=1.2,
+        tectonics=Tectonics.FIXED,
+        water_prevalence=Water.MINIMAL,
+        albedo=0.25,
+    )
+    worlds[4] = worlds[4]._replace(
+        world_class=WorldClass.TWO,
+        arf=1.2,
+        tectonics=Tectonics.FIXED,
+        water_prevalence=Water.MINIMAL,
+        albedo=0.25,
+    )
+    worlds[5] = worlds[5]._replace(
+        world_class=WorldClass.FOUR,
+        arf=0.9,
+        oxygen_occurred=True,
+        albedo=0.25,
+        abio_vents_occurred=True,
+    )
+
+    expected = (
+        (650, False, False),
+        (254, False, False),
+        (259, False, False),
+        (261, True, False),
+        (261, True, False),
+        (261, True, True),
+    )
+    for n, world in enumerate(worlds):
+        temp, trace_methane, trace_ozone = calc_surface_temp_1(world)
+        exp_temp, exp_methane, exp_ozone = expected[n]
+        assert temp == exp_temp, f"Case {n} temp"
+        assert trace_methane == exp_methane, f"Case {n} methane"
+        assert trace_ozone == exp_ozone, f"Case {n} methane"
+
+
+def test_adjust_carbon_dioxide():
+    worlds = [World() for _ in range(4)]
+    worlds[0] = worlds[0]._replace(
+        world_class=WorldClass.ONE,
+        mass_carbon_dioxide=65.3,
+        surf_temp=240,
+    )
+    worlds[1] = worlds[1]._replace(
+        world_class=WorldClass.FOUR,
+        mass_carbon_dioxide=4.0,
+        water_prevalence=Water.MINIMAL,
+        surf_temp=278,
+    )
+    worlds[2] = worlds[2]._replace(
+        world_class=WorldClass.FOUR,
+        mass_carbon_dioxide=7.2,
+        water_prevalence=Water.MODERATE,
+        surf_temp=278,
+    )
+    worlds[3] = worlds[3]._replace(
+        world_class=WorldClass.FOUR,
+        mass_carbon_dioxide=6.7,
+        water_prevalence=Water.MODERATE,
+        surf_temp=240,
+    )
+
+    randoms = (
+        Dice(mocks=[3, 4, 5]),
+        Dice(mocks=[3, 4, 3, 6, 6, 6]),
+        Dice(mocks=[1, 5, 5, 6, 1, 5, 4]),
+        Dice(mocks=[5, 6, 4, 5, 6, 6]),
+    )
+    expected = (
+        (291, 65.3),
+        (319, 4.0),
+        (290, 9.95e-4),
+        (268, 0.09884),
+    )
+    for n, world in enumerate(worlds):
+        new_temp, new_mass_co2 = adjust_carbon_dioxide(world, randoms[n])
+        exp_temp, exp_mass_co2 = expected[n]
+        assert new_temp == exp_temp, f"Case {n} temp"
+        assert new_mass_co2 == pytest.approx(
+            exp_mass_co2, abs=1e-6
+        ), f"Case {n} carbon dioxide"
+
+
+def test_calc_water_vapour():
+    worlds = [World() for _ in range(6)]
+    worlds[0] = worlds[0]._replace(
+        world_class=WorldClass.FOUR,
+        water_prevalence=Water.TRACE,
+        surf_temp=240,
+    )
+    worlds[1] = worlds[1]._replace(
+        world_class=WorldClass.FOUR,
+        water_prevalence=Water.EXTENSIVE,
+        surf_temp=278,
+    )
+    worlds[2] = worlds[2]._replace(
+        world_class=WorldClass.FOUR,
+        water_prevalence=Water.MASSIVE,
+        surf_temp=265,
+    )
+    worlds[3] = worlds[3]._replace(
+        world_class=WorldClass.FOUR,
+        water_prevalence=Water.MODERATE,
+        surf_temp=315,
+    )
+    worlds[4] = worlds[4]._replace(
+        world_class=WorldClass.FOUR,
+        water_prevalence=Water.MODERATE,
+        surf_temp=328,
+    )
+    worlds[5] = worlds[5]._replace(
+        world_class=WorldClass.FOUR,
+        water_prevalence=Water.MODERATE,
+        surf_temp=259,
+    )
+
+    expected = (
+        (240, 0.0),
+        (304, 0.031333),
+        (287, 0.009924),
+        (348, 0.234323),
+        (363, 0.416366),
+        (259, 1.78e-5),
+    )
+    for n, world in enumerate(worlds):
+        new_temp, mass_vapour = calc_water_vapour(world)
+        exp_temp, exp_mass_vapour = expected[n]
+        assert new_temp == exp_temp, f"Case {n} temp"
+        assert mass_vapour == pytest.approx(
+            exp_mass_vapour, abs=1e-6
+        ), f"Case {n} carbon dioxide"

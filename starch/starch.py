@@ -32,6 +32,9 @@ from world import (
     calc_animals,
     calc_presentients,
     calc_mass_oxygen,
+    calc_surface_temp_1,
+    adjust_carbon_dioxide,
+    calc_water_vapour,
 )
 
 
@@ -294,6 +297,14 @@ def main():
     pre, pre_time = calc_presentients(world)
     world = world._replace(presentients_occurred=pre, time_to_presentients=pre_time)
     world = world._replace(mass_oxygen=calc_mass_oxygen(world))
+    surf_temp, methane, ozone = calc_surface_temp_1(world)
+    world = world._replace(
+        surf_temp=surf_temp, methane_present=methane, ozone_present=ozone
+    )
+    new_surf_temp, new_CO2 = adjust_carbon_dioxide(world)
+    world = world._replace(surf_temp=new_surf_temp, mass_carbon_dioxide=new_CO2)
+    new_surf_temp, h20_vape = calc_water_vapour(world)
+    world = world._replace(surf_temp=new_surf_temp, mass_water_vapour=h20_vape)
     print(world.describe())
 
 

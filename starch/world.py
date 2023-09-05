@@ -139,6 +139,7 @@ class World(NamedTuple):
     mass_nitrogen: float = 0.0
     mass_carbon_dioxide: float = 0.0
     mass_oxygen: float = 0.0
+    mass_water_vapour: float = 0.0
     world_class: WorldClass = WorldClass.SIX
     albedo: float = 0.1
     abio_vents_occurred: bool = False
@@ -155,6 +156,9 @@ class World(NamedTuple):
     time_to_animals: int | None = None
     presentients_occurred: bool = False
     time_to_presentients: int | None = None
+    surf_temp: int = 278
+    methane_present: bool = False
+    ozone_present: bool = False
 
     @property
     def radius(self):
@@ -257,7 +261,7 @@ class World(NamedTuple):
         if self.abio_surface_occurred or self.abio_vents_occurred:
             return "Anaerobic life"
         else:
-            return "Lifeless"
+            return "Barren"
 
     @property
     def photosynthesis_time_scale(self):
@@ -323,10 +327,12 @@ class World(NamedTuple):
         text.append(
             f"{self.world_class.value}{' CS Cycle present' if self.carbon_silicate_cycle else ''} ARF: {self.arf} H2: "
             f"{self.mass_hydrogen:.2f} He: {self.mass_helium:.2f} "
-            f"N2: {self.mass_nitrogen:.2f} CO2: {self.mass_carbon_dioxide:.2f} "
-            f"O2: {self.mass_oxygen:.2f}"
+            f"N2: {self.mass_nitrogen:.2f} CO2: {self.mass_carbon_dioxide:g} "
+            f"O2: {self.mass_oxygen:.2f} H2O vapour: {self.mass_water_vapour:g}"
+            f"{' Trace methane' if self.methane_present else ''}"
+            f"{' Trace ozone' if self.ozone_present else ''}"
         )
-        text.append(f"Albedo: {self.albedo:.2f}")
+        text.append(f"Albedo: {self.albedo:.2f} Surface Temp: {self.surf_temp:.0f}")
         text.append(
             f"{self.life} [{'Deep sea vents' if self.abio_vents_occurred else ''}{' Surface refugia' if self.abio_surface_occurred else ''}"
             f"{' / Multicellular' if self.multicellular_occured else ''}{' / Photosynthetic' if self.photosynthesis_occurred else ''}"
@@ -887,3 +893,72 @@ def calc_mass_oxygen(w: World, rand: Dice = Dice()) -> float:
         roll += 15
         return w.arf * roll / 100
     return roll * 0.002
+
+
+def calc_surface_temp_1(w: World) -> (float, bool, bool):
+    """Step 30 first half"""
+    base_temp = w.black_body_temp * math.pow((1 - w.albedo), 0.25)
+    temp = 278.45
+    methane_present = False
+    ozone_present = False
+    if w.world_class is WorldClass.ONE:
+        if w.mass_carbon_dioxide > 0:
+            temp = base_temp + 250 * math.log10(w.mass_carbon_dioxide)
+    elif w.world_class is WorldClass.SIX:
+        temp = base_temp
+    elif w.arf == 0.0:
+        temp = base_temp
+    else:
+        temp = base_temp
+        if w.world_class in (WorldClass.TWO, WorldClass.THREE) or (
+            w.world_class is WorldClass.FOUR
+            and (w.abio_surface_occurred or w.abio_vents_occurred)
+        ):
+            if w.black_body_temp >= 110 and w.m_number <= 16:
+                temp += int(2.1 + 8 * math.log10(w.arf))
+                methane_present = True
+        if w.oxygen_occurred:
+            temp += int(1.7 + 8 * math.log10(w.arf))
+            ozone_present = True
+        if w.carbon_silicate_cycle:
+            pass
+
+    return int(round(temp, 0)), methane_present, ozone_present
+
+
+# --------------------------------------------------
+def adjust_carbon_dioxide(w: World, rand: Dice = Dice()) -> (int, float):
+    new_temp = w.surf_temp
+    new_mass_carbon_dioxide = w.mass_carbon_dioxide
+    if w.carbon_silicate_cycle:
+        temp_mod = max(8, 260 - w.surf_temp)
+        temp_mod += sum(rand.next() for _ in range(3)) - 7
+        new_temp += temp_mod
+        new_mass_carbon_dioxide = 3.16e-5 * math.pow(1.333, temp_mod)
+    else:
+        if w.mass_carbon_dioxide > 0.0:
+            new_temp = w.surf_temp + 36 + 8 * math.log10(w.mass_carbon_dioxide)
+
+    return int(round(new_temp, 0)), new_mass_carbon_dioxide
+
+
+# --------------------------------------------------
+def calc_water_vapour(w: World) -> (int, float):
+    new_temp = w.surf_temp
+    mass_water_vapour = 0.0
+    if (
+        w.m_number <= 18
+        and w.black_body_temp >= 260
+        and w.water_prevalence in (Water.MODERATE, Water.EXTENSIVE, Water.MASSIVE)
+    ):
+        temp_add = look_up(t.water_vapour, new_temp)
+        if new_temp > 333:
+            temp_add += int((new_temp - 333) / 5 + 0.99999)
+        if w.water_prevalence == Water.EXTENSIVE:
+            temp_add += 3
+        if w.water_prevalence == Water.MASSIVE:
+            temp_add += 4
+        new_temp += temp_add
+        mass_water_vapour = 1.78e-5 * math.pow(1.333, temp_add)
+
+    return int(round(new_temp, 0)), mass_water_vapour
