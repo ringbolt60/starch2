@@ -696,7 +696,45 @@ def _calc_rotation_period(
 
     Implements Step 19 pp 93-95. Constants tweaked to make earth and Luna exact.
     """
+    if t_number <= 0:
+        raise ValueError()
+    if t_adj < 0:
+        raise ValueError()
+    if orbital_period <= 0:
+        raise ValueError()
+    if ecc <= 0:
+        raise ValueError()
+    if primary_distance <= 0:
+        raise ValueError()
+    if satellite_mass <= 0:
+        raise ValueError()
+    if planet_mass <= 0:
+        raise ValueError()
+
+    def _adjust_for_eccentricity(ecc=0.0, period=1.0):
+        """Check for eccentricity induced orbital resonance."""
+        multiplier = 1
+        lock = ""
+        if ecc <= 0.12:
+            lock = Resonance.LOCK_TO_STAR
+        elif 0.12 < ecc < 0.25:
+            multiplier = 2.0 / 3.0
+            lock = Resonance.RESONANCE_3_2
+        elif 0.25 <= ecc < 0.35:
+            multiplier = 0.5
+            lock = Resonance.RESONANCE_2_1
+        elif 0.35 <= ecc < 0.45:
+            multiplier = 0.4
+            lock = Resonance.RESONANCE_5_2
+        else:
+            lock = Resonance.RESONANCE_3_1
+            multiplier = 1.0 / 3.0
+        return lock, period * multiplier
+
     roll = sum(rand.next() for _ in range(3)) + t_adj
+    sat_period = 2.768e-6 * math.sqrt(
+        math.pow(primary_distance, 3) / (satellite_mass + planet_mass)
+    )
     if wt == WorldType.SATELLITE:
         return orbital_period, Resonance.LOCK_TO_PRIMARY
 
@@ -706,8 +744,7 @@ def _calc_rotation_period(
             lock, period = _adjust_for_eccentricity(ecc, period)
             return period, lock
         return (
-            2.768e-6
-            * math.sqrt(math.pow(primary_distance, 3) / (satellite_mass + planet_mass)),
+            sat_period,
             Resonance.LOCK_TO_SATELLITE,
         )
 
@@ -715,7 +752,9 @@ def _calc_rotation_period(
     lower, upper = p
     period = random.uniform(lower, upper)
     lock = Resonance.NONE
-    if period >= orbital_period:
+    if wt is WorldType.ORBITED and period >= sat_period:
+        return sat_period, Resonance.LOCK_TO_SATELLITE
+    elif wt is WorldType.LONE and period >= orbital_period:
         period = orbital_period
         lock, period = _adjust_for_eccentricity(ecc, period)
     return period, lock
@@ -782,28 +821,6 @@ def _calc_water(
                 gh = True
 
     return water, percentage, gh
-
-
-# --------------------------------------------------
-def _adjust_for_eccentricity(ecc=0.0, period=1.0):
-    """Check for eccentricity induced orbital resonance."""
-    multiplier = 1
-    lock = ""
-    if ecc <= 0.12:
-        lock = Resonance.LOCK_TO_STAR
-    elif 0.12 < ecc < 0.25:
-        multiplier = 2.0 / 3.0
-        lock = Resonance.RESONANCE_3_2
-    elif 0.25 <= ecc < 0.35:
-        multiplier = 0.5
-        lock = Resonance.RESONANCE_2_1
-    elif 0.35 <= ecc < 0.45:
-        multiplier = 0.4
-        lock = Resonance.RESONANCE_5_2
-    else:
-        lock = Resonance.RESONANCE_3_1
-        multiplier = 1.0 / 3.0
-    return lock, period * multiplier
 
 
 # --------------------------------------------------
