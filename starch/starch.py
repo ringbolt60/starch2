@@ -9,32 +9,8 @@ import argparse
 import re
 
 from world import (
-    World,
     WorldType,
-    calc_orbital_period,
-    calc_rotation_period,
-    calc_obliquity,
-    calc_water,
-    calc_geophysics,
-    calc_magnetic_field,
-    calc_arf,
-    calc_mass_hydrogen,
-    calc_mass_helium,
-    calc_mass_nitrogen,
-    calc_world_class,
-    calc_albedo,
-    calc_mass_carbon_dioxide,
-    calc_abio_vents,
-    calc_abio_surface,
-    calc_multicellular,
-    calc_photosynthesis,
-    calc_oxygen_cat,
-    calc_animals,
-    calc_presentients,
-    calc_mass_oxygen,
-    calc_surface_temp_1,
-    adjust_carbon_dioxide,
-    calc_water_vapour,
+    create_world,
 )
 
 
@@ -226,85 +202,7 @@ def main():
     """Start doing stuff here."""
 
     args = get_args()
-    world = World(
-        name=args.name,
-        world_type=args.type,
-        planet_mass=args.mass,
-        star_spectrum=args.spectral_type,
-        star_mass=args.mass_star,
-        star_distance=args.distance_star,
-        satellite_mass=args.satellite_mass,
-        primary_distance=args.distance_primary,
-        age=args.age,
-        ecc=args.ecc,
-        density=args.density,
-        luminosity=args.luminosity,
-        outside_ice_line=args.outside_ice_line,
-        grand_tack=args.grand_tack,
-        oort_cloud=args.oort_cloud,
-        green_house=args.green_house,
-        rocky_sat_of_gas_giant=args.rocky_sat,
-        metal=args.metal,
-    )
-    world = world._replace(orbital_period=calc_orbital_period(world))
-    rotation_period, lock = calc_rotation_period(world)
-    world = world._replace(rotational_period=rotation_period)
-    world = world._replace(lock=lock)
-    obl, instability = calc_obliquity(world)
-    world = world._replace(obliquity=obl, unstable_obliquity=instability)
-    water, percent, greenhouse = calc_water(world)
-    world = world._replace(
-        water_prevalence=water, water_percent=percent, green_house=greenhouse
-    )
-    lith, tect, epi_resurface, new_water_prev, new_water_percent = calc_geophysics(
-        world
-    )
-    world = world._replace(
-        lithosphere=lith,
-        tectonics=tect,
-        episodic_resurfacing=epi_resurface,
-        water_prevalence=new_water_prev,
-        water_percent=new_water_percent,
-    )
-    world = world._replace(magnetic_field=calc_magnetic_field(world))
-    world = world._replace(arf=calc_arf(world))
-    world = world._replace(mass_hydrogen=calc_mass_hydrogen(world))
-    world = world._replace(mass_helium=calc_mass_helium(world))
-    world = world._replace(mass_nitrogen=calc_mass_nitrogen(world))
-    world = world._replace(world_class=calc_world_class(world))
-    world = world._replace(albedo=calc_albedo(world))
-    world = world._replace(mass_carbon_dioxide=calc_mass_carbon_dioxide(world))
-    abio_vent, abio_vent_time = calc_abio_vents(world)
-    world = world._replace(
-        abio_vents_occurred=abio_vent, time_to_abio_vents=abio_vent_time
-    )
-    abio_surf, abio_surf_time = calc_abio_surface(world)
-    world = world._replace(
-        abio_surface_occurred=abio_surf, time_to_abio_surface=abio_surf_time
-    )
-    multi, multi_time = calc_multicellular(world)
-    world = world._replace(
-        multicellular_occured=multi, time_to_multicellular=multi_time
-    )
-    photo, photo_time = calc_photosynthesis(world)
-    world = world._replace(
-        photosynthesis_occurred=photo, time_to_photosynthesis=photo_time
-    )
-    oxy, oxy_time = calc_oxygen_cat(world)
-    world = world._replace(oxygen_occurred=oxy, time_to_oxygen=oxy_time)
-    anim, anim_time = calc_animals(world)
-    world = world._replace(animals_occurred=anim, time_to_animals=anim_time)
-    pre, pre_time = calc_presentients(world)
-    world = world._replace(presentients_occurred=pre, time_to_presentients=pre_time)
-    world = world._replace(mass_oxygen=calc_mass_oxygen(world))
-    surf_temp, methane, ozone = calc_surface_temp_1(world)
-    world = world._replace(
-        surf_temp=surf_temp, methane_present=methane, ozone_present=ozone
-    )
-    new_surf_temp, new_CO2 = adjust_carbon_dioxide(world)
-    world = world._replace(surf_temp=new_surf_temp, mass_carbon_dioxide=new_CO2)
-    new_surf_temp, h20_vape = calc_water_vapour(world)
-    world = world._replace(surf_temp=new_surf_temp, mass_water_vapour=h20_vape)
+    world = create_world(args)
     print(world.describe())
 
 
